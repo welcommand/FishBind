@@ -28,6 +28,6 @@ typedef void(^IIFishMindine) (id object, NSString *keyPatch,id resule,NSArray *a
 
 @interface IIFishBind : NSObject
 
-+ (void)bind:(IIFish *)fish, ...;
++ (void)bindFishes:(NSArray <IIFish*> *)fishes;
 
 @end
