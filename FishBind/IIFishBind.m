@@ -13,7 +13,6 @@
 #pragma mark-
 
 // TODO
-//link info
 // arg get
 // block copy
 //return?
@@ -41,8 +40,36 @@
 @end
 
 #pragma mark-
-#pragma mark- class table
+#pragma mark - info
 
+@interface IIFishInfo : NSObject
+@property (nonatomic, copy) NSString *key;
+@property (nonatomic, strong) NSHashTable *observers;
+@end
+
+@implementation IIFishInfo
+- (instancetype)initWithKey:(NSString *)key {
+    if (self = [super init]) {
+        _key = [key copy];
+        _observers = [NSHashTable hashTableWithOptions:NSPointerFunctionsWeakMemory];
+    }
+    return self;
+}
+@end
+
+#pragma mark-
+#pragma mark- lock
+
+static void IIFist_Lock(dispatch_block_t block) {
+    static pthread_mutex_t mutex;
+    pthread_mutex_init(&mutex, NULL);
+    pthread_mutex_lock(&mutex);
+    block();
+    pthread_mutex_unlock(&mutex);
+}
+
+#pragma mark-
+#pragma mark- class table
 
 static dispatch_queue_t IIFish_ClassTable_Queue() {
     static dispatch_queue_t classTableQueue = nil;
@@ -87,32 +114,22 @@ static NSMapTable* IIFish_GlobalTable() {
     return globalTable;
 }
 
-
-
-#pragma mark-
-#pragma mark - info
-
-@interface IIFishInfo : NSObject
-@property (nonatomic, copy) NSString *key;
-@property (nonatomic, strong) NSHashTable *observers;
-@end
-
-@implementation IIFishInfo
-- (instancetype)initWithKey:(NSString *)key {
-    if (self = [super init]) {
-        _key = [key copy];
-        _observers = [NSHashTable hashTableWithOptions:NSPointerFunctionsWeakMemory];
-    }
-    return self;
-}
-@end
-
 #pragma mark-
 #pragma mark- Block Hook
 
+//code from
+//https://opensource.apple.com/source/libclosure/libclosure-67
+
+
+///////////////////
 typedef NS_OPTIONS(int, IIFishBlockFlage) {
     IIFishBLOCK_HAS_COPY_DISPOSE =  (1 << 25),
     IIFishBLOCK_HAS_SIGNATURE  =    (1 << 30)
+};
+
+struct IIFishBlock_descriptor_1 {
+    uintptr_t reserved;
+    uintptr_t size;
 };
 
 struct IIFishBlock_descriptor_2 {
@@ -125,19 +142,39 @@ struct IIFishBlock_descriptor_3 {
     const char *layout;
 };
 
-struct _IIFish_Block_Impl {
-    Class isa;
-    int flags;
-    int reserved;
-    void (*invoke)(struct _IIFish_Block_Impl *block, ...);
-    struct {
-        unsigned long int reserved;
-        unsigned long int size;
-    } *IIFishBlock_descriptor_1;
+struct IIFishBlock_layout {
+    void *isa;
+    volatile int32_t flags;
+    int32_t reserved;
+    void (*invoke)(void *, ...);
+    struct Block_descriptor_1 *descriptor;
 };
-typedef  struct _IIFish_Block_Impl  *IIFishBlock;
 
-typedef void (*IIFishBlockIMP) (struct _IIFish_Block_Impl *block, ...);
+typedef  struct IIFishBlock_layout  *IIFishBlock;
+
+typedef void (*IIFishBlockIMP) (void*, ...);
+
+static struct IIFishBlock_descriptor_2 * _IIFish_Block_descriptor_2(IIFishBlock aBlock)
+{
+    if (! (aBlock->flags & IIFishBLOCK_HAS_COPY_DISPOSE)) return NULL;
+    uint8_t *desc = (uint8_t *)aBlock->descriptor;
+    desc += sizeof(struct IIFishBlock_descriptor_1);
+    return (struct IIFishBlock_descriptor_2 *)desc;
+}
+
+static struct IIFishBlock_descriptor_3 * _IIFish_Block_descriptor_3(IIFishBlock aBlock)
+{
+    if (! (aBlock->flags & IIFishBLOCK_HAS_SIGNATURE)) return NULL;
+    uint8_t *desc = (uint8_t *)aBlock->descriptor;
+    desc += sizeof(struct IIFishBlock_descriptor_1);
+    if (aBlock->flags & IIFishBLOCK_HAS_COPY_DISPOSE) {
+        desc += sizeof(struct IIFishBlock_descriptor_2);
+    }
+    return (struct IIFishBlock_descriptor_3 *)desc;
+}
+
+///////////////////
+
 
 static const NSString *IIFishBlockObserverKey = @"IIFishBlockObserverKey";
 
@@ -175,16 +212,6 @@ static void IIFish_Hook_Block(id obj) {
 
 
 #pragma mark- Method Hook
-static void IIFist_Lock(dispatch_block_t block) {
-    static pthread_mutex_t mutex;
-    pthread_mutex_init(&mutex, NULL);
-    pthread_mutex_lock(&mutex);
-    block();
-    pthread_mutex_unlock(&mutex);
-}
-
-
-
 static void IIFish_Hook_Class(id object) {
     if (!IIFish_ClassTable_ContainClass([object class])) {
 
@@ -205,7 +232,12 @@ static void IIFish_Hook_Class(id object) {
 
 + (void)load {
     
+    
+
+    
+    
 }
+
 
 
 @end
