@@ -12,6 +12,11 @@
 
 #pragma mark-
 
+// TODO
+//link info
+// arg get
+// block copy
+//return?
 
 @implementation IIFish
 + (instancetype)fishWithObject:(id)object keyPatch:(NSString *)keypPatch block:(IIFishMindine)block {
@@ -32,6 +37,51 @@
 @implementation IIPostFish
 + (instancetype)fishWithObject:(id)object keyPatch:(NSString *)keypPatch {
     return [super fishWithObject:object keyPatch:keypPatch block:nil];
+}
+@end
+
+#pragma mark-
+#pragma mark- public Model
+//
+//@interface IIFishGlobalTable : NSObject {
+//    NSMutableSet *fishClassTable;
+//}
+//@end
+//
+//@implementation IIFishGlobalTable
+//
+//+ (void)globalTable {
+//    static IIFishGlobalTable *obj = nil;
+//    static dispatch_once_t onceToken;
+//    dispatch_once(&onceToken, ^{
+//        obj = [[self alloc] init];
+//
+//    });
+//}
+//
+//
+//+ (BOOL)classTableContainClass:(Class)class {
+//}
+//
+//+ (void)addClassToClassTable:(Class)class {
+//
+//}
+
+//@end
+
+
+@interface IIFishInfo : NSObject
+@property (nonatomic, copy) NSString *key;
+@property (nonatomic, strong) NSHashTable *observers;
+@end
+
+@implementation IIFishInfo
+- (instancetype)initWithKey:(NSString *)key {
+    if (self = [super init]) {
+        _key = [key copy];
+        _observers = [NSHashTable hashTableWithOptions:NSPointerFunctionsWeakMemory];
+    }
+    return self;
 }
 @end
 
@@ -67,6 +117,9 @@ typedef  struct _IIFish_Block_Impl  *IIFishBlock;
 
 typedef void (*IIFishBlockIMP) (struct _IIFish_Block_Impl *block, ...);
 
+static const NSString *IIFishBlockObserverKey = @"IIFishBlockObserverKey";
+
+
 //https://opensource.apple.com/source/libclosure/libclosure-59/Block_private.h.auto.html
 
 void IIFishBlockFuncPtr(struct _IIFish_Block_Impl *block, ...) {
@@ -93,9 +146,11 @@ static BOOL IIFish_IsBlock(id object) {
 
 static void IIFish_Check_Block(id obj) {
     if (IIFish_Block_Get_Org_Imp(obj) == 0) {
-        
+        IIFishBlock block = (__bridge IIFishBlock)(obj);
+        IIFishBlockIMP orgImp = block->invoke;
+        IIFish_Block_Set_Org_Imp(obj, orgImp);
+        block->invoke = (IIFishBlockIMP)IIFishBlockFuncPtr;
     }
-    
 }
 
 
