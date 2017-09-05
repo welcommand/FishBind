@@ -41,34 +41,56 @@
 @end
 
 #pragma mark-
-#pragma mark- public Model
-//
-//@interface IIFishGlobalTable : NSObject {
-//    NSMutableSet *fishClassTable;
-//}
-//@end
-//
-//@implementation IIFishGlobalTable
-//
-//+ (void)globalTable {
-//    static IIFishGlobalTable *obj = nil;
-//    static dispatch_once_t onceToken;
-//    dispatch_once(&onceToken, ^{
-//        obj = [[self alloc] init];
-//
-//    });
-//}
-//
-//
-//+ (BOOL)classTableContainClass:(Class)class {
-//}
-//
-//+ (void)addClassToClassTable:(Class)class {
-//
-//}
+#pragma mark- class table
 
-//@end
 
+static dispatch_queue_t IIFish_ClassTable_Queue() {
+    static dispatch_queue_t classTableQueue = nil;
+    if (!classTableQueue) {
+        classTableQueue = dispatch_queue_create("com.IIFishClassTableQueue.www", DISPATCH_QUEUE_CONCURRENT);
+    }
+    return classTableQueue;
+}
+
+static NSMutableSet* IIFish_ClassTable() {
+    static NSMutableSet *classTable;
+    if (!classTable) {
+        classTable = [NSMutableSet new];
+    }
+    return classTable;
+}
+
+static BOOL IIFish_ClassTable_ContainClass(Class cls) {
+    __block BOOL contain;
+    dispatch_sync(IIFish_ClassTable_Queue(), ^{
+        NSMutableSet *classTable = IIFish_ClassTable();
+        contain = [classTable containsObject:cls];
+    });
+    return contain;
+}
+
+static void IIFish_ClassTable_AddClass(Class cls) {
+    dispatch_barrier_async(IIFish_ClassTable_Queue(), ^{
+        NSMutableSet *classTable = IIFish_ClassTable();
+        [classTable addObject:cls];
+    });
+}
+
+#pragma mark-
+#pragma mark- GlobalTable
+
+static NSMapTable* IIFish_GlobalTable() {
+    static NSMapTable *globalTable;
+    if (!globalTable) {
+        globalTable = [NSMapTable mapTableWithKeyOptions:NSPointerFunctionsWeakMemory valueOptions:NSPointerFunctionsWeakMemory];
+    }
+    return globalTable;
+}
+
+
+
+#pragma mark-
+#pragma mark - info
 
 @interface IIFishInfo : NSObject
 @property (nonatomic, copy) NSString *key;
@@ -124,8 +146,6 @@ static const NSString *IIFishBlockObserverKey = @"IIFishBlockObserverKey";
 
 void IIFishBlockFuncPtr(struct _IIFish_Block_Impl *block, ...) {
     
-    
-    
 }
 
 
@@ -140,11 +160,11 @@ static void IIFish_Block_Set_Org_Imp(id block, IIFishBlockIMP orgImp) {
     objc_setAssociatedObject(block, @"IIFish_Block_Org_Imp", oImp, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-static BOOL IIFish_IsBlock(id object) {
+static BOOL IIFish_Block_TypeCheck(id object) {
     return [object isKindOfClass:NSClassFromString(@"NSBlock")];
 }
 
-static void IIFish_Check_Block(id obj) {
+static void IIFish_Hook_Block(id obj) {
     if (IIFish_Block_Get_Org_Imp(obj) == 0) {
         IIFishBlock block = (__bridge IIFishBlock)(obj);
         IIFishBlockIMP orgImp = block->invoke;
@@ -163,21 +183,14 @@ static void IIFist_Lock(dispatch_block_t block) {
     pthread_mutex_unlock(&mutex);
 }
 
-static NSMutableSet* IIFish_Class_Table() {
-    static NSMutableSet *classTable;
-    if (!classTable) {
-        classTable = [NSMutableSet new];
-    }
-    return classTable;
-}
 
-static void IIFish_Check_Class(id object) {
-    NSMutableSet *classTable = IIFish_Class_Table();
-    if (![classTable containsObject:[object class]]) {
-        
+
+static void IIFish_Hook_Class(id object) {
+    if (!IIFish_ClassTable_ContainClass([object class])) {
+
         //objc_allocateClassPair([object class], const char * _Nonnull name, <#size_t extraBytes#>)
-        
-        [classTable addObject:[object class]];
+
+        IIFish_ClassTable_AddClass([object class]);
     }
 }
 
