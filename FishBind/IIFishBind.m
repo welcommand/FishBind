@@ -74,7 +74,7 @@ static void IIFist_Lock(dispatch_block_t block) {
 static dispatch_queue_t IIFish_ClassTable_Queue() {
     static dispatch_queue_t classTableQueue = nil;
     if (!classTableQueue) {
-        classTableQueue = dispatch_queue_create("com.IIFishClassTableQueue.www", DISPATCH_QUEUE_CONCURRENT);
+        classTableQueue = dispatch_queue_create("com.IIFishClassTableQueue.FishBind", DISPATCH_QUEUE_CONCURRENT);
     }
     return classTableQueue;
 }
@@ -120,7 +120,6 @@ static NSMapTable* IIFish_GlobalTable() {
 //code from
 //https://opensource.apple.com/source/libclosure/libclosure-67
 
-
 ///////////////////
 typedef NS_OPTIONS(int, IIFishBlockFlage) {
     IIFishBLOCK_HAS_COPY_DISPOSE =  (1 << 25),
@@ -149,10 +148,7 @@ struct IIFishBlock_layout {
     void (*invoke)(void *, ...);
     struct Block_descriptor_1 *descriptor;
 };
-
 typedef  struct IIFishBlock_layout  *IIFishBlock;
-
-typedef void (*IIFishBlockIMP) (void*, ...);
 
 static struct IIFishBlock_descriptor_2 * _IIFish_Block_descriptor_2(IIFishBlock aBlock)
 {
@@ -175,37 +171,50 @@ static struct IIFishBlock_descriptor_3 * _IIFish_Block_descriptor_3(IIFishBlock 
 
 ///////////////////
 
+#pragma mark-
+#pragma mark- block imp holder
 
-static const NSString *IIFishBlockObserverKey = @"IIFishBlockObserverKey";
+@interface IIFishBlockIMPHolder : NSObject
+@end
+@implementation IIFishBlockIMPHolder
+@end
 
 
-//https://opensource.apple.com/source/libclosure/libclosure-59/Block_private.h.auto.html
+#pragma mark-
+typedef void (*IIFishBlockIMP) (void*, ...);
 
-void IIFishBlockFuncPtr(struct _IIFish_Block_Impl *block, ...) {
+static  NSString const *IIFishBlockObserverKey = @"IIFishBlockObserverKey";
+//static NSString const *IIFishBlockOrgSelector = @"";
+
+void IIFishBlockFuncPtr(IIFishBlock block, ...) {
+    
     
 }
 
-
-
-static IIFishBlockIMP IIFish_Block_Get_Org_Imp(id block) {
-    id orgImp = objc_getAssociatedObject(block, @"IIFish_Block_Org_Imp");
-    return orgImp ? (IIFishBlockIMP)(__bridge void *)orgImp : 0;
+static long long IIFish_Block_Get_Org_Address(id block) {
+    return  [objc_getAssociatedObject(block, @"IIFish_Block_Org_Imp") longLongValue];
 }
 
-static void IIFish_Block_Set_Org_Imp(id block, IIFishBlockIMP orgImp) {
-    id oImp = (__bridge id)((void *)orgImp);
-    objc_setAssociatedObject(block, @"IIFish_Block_Org_Imp", oImp, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+static void IIFish_Block_Set_Org_Address(id block, long  long orgFuncAddress) {
+    objc_setAssociatedObject(block, @"IIFish_Block_Org_Imp", @(orgFuncAddress), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 static BOOL IIFish_Block_TypeCheck(id object) {
     return [object isKindOfClass:NSClassFromString(@"NSBlock")];
 }
 
+
 static void IIFish_Hook_Block(id obj) {
-    if (IIFish_Block_Get_Org_Imp(obj) == 0) {
+    if (IIFish_Block_Get_Org_Address(obj) == 0) {
         IIFishBlock block = (__bridge IIFishBlock)(obj);
-        IIFishBlockIMP orgImp = block->invoke;
-        IIFish_Block_Set_Org_Imp(obj, orgImp);
+        long long blockOrgFuncAddress = (long long)block->invoke;
+        SEL fakeSel = NSSelectorFromString([@(blockOrgFuncAddress) stringValue]);
+        if (!class_getClassMethod([IIFishBlockIMPHolder class], fakeSel)) {
+            IMP fakeImp = imp_implementationWithBlock([obj copy]);
+            struct IIFishBlock_descriptor_3 *des3 =  _IIFish_Block_descriptor_3(block);
+            class_addMethod([IIFishBlockIMPHolder class], fakeSel, fakeImp, des3->signature);
+        }
+        IIFish_Block_Set_Org_Address(obj, blockOrgFuncAddress);
         block->invoke = (IIFishBlockIMP)IIFishBlockFuncPtr;
     }
 }
@@ -231,10 +240,6 @@ static void IIFish_Hook_Class(id object) {
 #pragma mark- test
 
 + (void)load {
-    
-    
-
-    
     
 }
 
