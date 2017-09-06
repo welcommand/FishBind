@@ -174,21 +174,33 @@ static struct IIFishBlock_descriptor_3 * _IIFish_Block_descriptor_3(IIFishBlock 
 #pragma mark-
 #pragma mark- block imp holder
 
-@interface IIFishBlockIMPHolder : NSObject
+@interface IIFishBlockFuncHolder : NSObject
 @end
-@implementation IIFishBlockIMPHolder
+@implementation IIFishBlockFuncHolder
 @end
 
 
 #pragma mark-
-typedef void (*IIFishBlockIMP) (void*, ...);
+typedef void (*IIFishBlockFunc) (void*, ...);
+
+static long long IIFish_Block_Get_Org_Address(id block);
 
 static  NSString const *IIFishBlockObserverKey = @"IIFishBlockObserverKey";
 //static NSString const *IIFishBlockOrgSelector = @"";
 
 void IIFishBlockFuncPtr(IIFishBlock block, ...) {
     
+    long long funcAddress =  IIFish_Block_Get_Org_Address((__bridge id)block);
+    SEL orgSel = NSSelectorFromString([NSString stringWithFormat:@"IIFishBlock_%@:",@(funcAddress)]);
     
+    NSMethodSignature *ms = [IIFishBlockFuncHolder methodSignatureForSelector:orgSel];
+    NSInvocation *inv = [NSInvocation invocationWithMethodSignature:ms];
+    inv.target = [IIFishBlockFuncHolder class];
+    inv.selector = orgSel;
+    [inv setArgument:block atIndex:2];
+    [inv invoke];
+
+    return;
 }
 
 static long long IIFish_Block_Get_Org_Address(id block) {
@@ -203,19 +215,49 @@ static BOOL IIFish_Block_TypeCheck(id object) {
     return [object isKindOfClass:NSClassFromString(@"NSBlock")];
 }
 
+static const char *IIFish_Block_ConvertBlockSignature(const char * signature) {
+    NSString *tString = [NSString stringWithUTF8String:signature];
+//    return [[tString stringByReplacingOccurrencesOfString:@"@?0" withString:[NSString stringWithFormat:@"@0:%@",@(sizeof(id))] options:2 range:[tString rangeOfString:@"@?0"]] UTF8String];
+//    //v8@?0
+//    //v24@0:8@16
+    
+    return [@"v24@0:8@?16" UTF8String];
+}
 
 static void IIFish_Hook_Block(id obj) {
     if (IIFish_Block_Get_Org_Address(obj) == 0) {
         IIFishBlock block = (__bridge IIFishBlock)(obj);
         long long blockOrgFuncAddress = (long long)block->invoke;
-        SEL fakeSel = NSSelectorFromString([@(blockOrgFuncAddress) stringValue]);
-        if (!class_getClassMethod([IIFishBlockIMPHolder class], fakeSel)) {
-            IMP fakeImp = imp_implementationWithBlock([obj copy]);
+        
+        NSString *fakeSelString = [NSString stringWithFormat:@"IIFishBlock_%@:",@(blockOrgFuncAddress)];
+        
+        SEL fakeSel = NSSelectorFromString(fakeSelString);
+        if (!class_getClassMethod([IIFishBlockFuncHolder class], fakeSel)) {
+            
+            //deep copy
+
+            struct IIFishBlock_layout newBlock;
+            newBlock.isa = (__bridge void *)[obj class];
+            newBlock.flags = block->flags;
+            newBlock.invoke = block->invoke;
+            newBlock.reserved = block->reserved;
+            newBlock.descriptor = block->descriptor;
+            
+            
+            IIFishBlock p = &newBlock;
+            IMP fakeImp = imp_implementationWithBlock((__bridge id)p);
             struct IIFishBlock_descriptor_3 *des3 =  _IIFish_Block_descriptor_3(block);
-            class_addMethod([IIFishBlockIMPHolder class], fakeSel, fakeImp, des3->signature);
+            
+            const char *c = IIFish_Block_ConvertBlockSignature (des3->signature);
+            
+            NSMethodSignature *ms = [NSMethodSignature signatureWithObjCTypes:c];
+            
+            class_addMethod(objc_getMetaClass(object_getClassName([IIFishBlockFuncHolder class])), fakeSel, fakeImp, c);
+            
+            NSLog(@"asdasd");
         }
         IIFish_Block_Set_Org_Address(obj, blockOrgFuncAddress);
-        block->invoke = (IIFishBlockIMP)IIFishBlockFuncPtr;
+        block->invoke = (IIFishBlockFunc)IIFishBlockFuncPtr;
     }
 }
 
@@ -239,7 +281,32 @@ static void IIFish_Hook_Class(id object) {
 #pragma mark-
 #pragma mark- test
 
+
++ (void)test:(id)obj {
+    
+}
+
 + (void)load {
+    
+    //v16@0:8
+    //v8@?0
+    //v24@0:8@16
+
+    
+    
+    
+    
+    
+    
+    void (^testBlock)() = ^() {
+        NSLog(@"bbTest");
+    };
+    
+    
+    IIFish_Hook_Block(testBlock);
+    testBlock();
+    
+    NSLog(@"asdasdasdsa");
     
 }
 
