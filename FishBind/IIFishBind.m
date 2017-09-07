@@ -197,7 +197,6 @@ void IIFishBlockFuncPtr(IIFishBlock block, ...) {
     NSInvocation *inv = [NSInvocation invocationWithMethodSignature:ms];
     inv.target = [IIFishBlockFuncHolder class];
     inv.selector = orgSel;
-    [inv setArgument:block atIndex:2];
     [inv invoke];
 
     return;
@@ -221,7 +220,7 @@ static const char *IIFish_Block_ConvertBlockSignature(const char * signature) {
 //    //v8@?0
 //    //v24@0:8@16
     
-    return [@"v24@0:8@?16" UTF8String];
+    return [@"v24@0:8" UTF8String];
 }
 
 static void IIFish_Hook_Block(id obj) {
@@ -236,7 +235,7 @@ static void IIFish_Hook_Block(id obj) {
             
             //deep copy
 
-            struct IIFishBlock_layout newBlock;
+            static struct IIFishBlock_layout newBlock;
             newBlock.isa = (__bridge void *)[obj class];
             newBlock.flags = block->flags;
             newBlock.invoke = block->invoke;
@@ -249,8 +248,6 @@ static void IIFish_Hook_Block(id obj) {
             struct IIFishBlock_descriptor_3 *des3 =  _IIFish_Block_descriptor_3(block);
             
             const char *c = IIFish_Block_ConvertBlockSignature (des3->signature);
-            
-            NSMethodSignature *ms = [NSMethodSignature signatureWithObjCTypes:c];
             
             class_addMethod(objc_getMetaClass(object_getClassName([IIFishBlockFuncHolder class])), fakeSel, fakeImp, c);
             
@@ -293,9 +290,10 @@ static void IIFish_Hook_Class(id object) {
     //v24@0:8@16
 
     
+    NSMethodSignature *ms = [NSMethodSignature signatureWithObjCTypes:"v24@0:8@?16"];
     
     
-    
+    Method m = class_getClassMethod(self, @selector(test:));
     
     
     void (^testBlock)() = ^() {
