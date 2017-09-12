@@ -183,7 +183,7 @@ static struct IIFishBlock_descriptor_3 * _IIFish_Block_descriptor_3(IIFishBlock 
 #pragma mark-
 typedef void (*IIFishBlockFunc) (void*, ...);
 
-static long long IIFish_Block_Get_Org_Address(id block);
+static IIFishBlock IIFish_Block_Get_TempBlock(id block);
 
 static  NSString const *IIFishBlockObserverKey = @"IIFishBlockObserverKey";
 //static NSString const *IIFishBlockOrgSelector = @"";
@@ -202,12 +202,16 @@ void IIFishBlockFuncPtr(IIFishBlock block, ...) {
     return;
 }
 
-static long long IIFish_Block_Get_Org_Address(id block) {
-    return  [objc_getAssociatedObject(block, @"IIFish_Block_Org_Imp") longLongValue];
+static IIFishBlock IIFish_Block_Get_TempBlock(id block) {
+    return (__bridge void *)objc_getAssociatedObject(block, @"IIFish_Block_TempBlock");
 }
 
-static void IIFish_Block_Set_Org_Address(id block, long  long orgFuncAddress) {
-    objc_setAssociatedObject(block, @"IIFish_Block_Org_Imp", @(orgFuncAddress), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+static void IIFish_Block_Set_TempGlobalBlock(id block, IIFishBlock tempBlock) {
+    objc_setAssociatedObject(block, @"IIFish_Block_TempBlock", (__bridge id)tempBlock, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+static void IIFish_Block_Set_TempMallocBlock(id block, IIFishBlock tempBlock) {
+    objc_setAssociatedObject(block, @"IIFish_Block_TempBlock", (__bridge id)tempBlock, OBJC_ASSOCIATION_ASSIGN);
 }
 
 static void * IIFish_Block_Get_DisposeFunc(id block) {
@@ -253,13 +257,17 @@ static IIFishBlock IIFish_Block_DeepCopy(IIFishBlock block) {
         if (!newBlock) return nil;
         memmove(newBlock, block, block->descriptor->size);
         descriptor_2->copy(newBlock, block);
+        IIFish_Block_Set_TempMallocBlock((__bridge id)block, newBlock);
+        IIFish_Block_HookDisposeFuncOnces(block);
     } else {
         newBlock->isa = block->isa;
         newBlock->flags = block->flags;
         newBlock->invoke = block->invoke;
         newBlock->reserved = block->reserved;
         newBlock->descriptor = block->descriptor;
+        IIFish_Block_Set_TempGlobalBlock((__bridge id)block, newBlock);
     }
+    
     return newBlock;
 }
 
@@ -273,7 +281,7 @@ static const char *IIFish_Block_ConvertBlockSignature(const char * signature) {
 }
 
 static void IIFish_Hook_Block(id obj) {
-    if (IIFish_Block_Get_Org_Address(obj) == 0) {
+    if (!IIFish_Block_Get_TempBlock(obj)) {
         IIFishBlock block = (__bridge IIFishBlock)(obj);
         long long blockOrgFuncAddress = (long long)block->invoke;
         
@@ -282,26 +290,14 @@ static void IIFish_Hook_Block(id obj) {
         SEL fakeSel = NSSelectorFromString(fakeSelString);
         if (!class_getClassMethod([IIFishBlockFuncHolder class], fakeSel)) {
             
-            //deep copy
-
-            static struct IIFishBlock_layout newBlock;
-            newBlock.isa = (__bridge void *)[obj class];
-            newBlock.flags = block->flags;
-            newBlock.invoke = block->invoke;
-            newBlock.reserved = block->reserved;
-            newBlock.descriptor = block->descriptor;
-            
-            
-            IIFishBlock p = &newBlock;
-            IMP fakeImp = imp_implementationWithBlock((__bridge id)p);
+            IIFishBlock newBlock = IIFish_Block_DeepCopy(block);
+            IMP fakeImp = imp_implementationWithBlock((__bridge id)newBlock);
             struct IIFishBlock_descriptor_3 *des3 =  _IIFish_Block_descriptor_3(block);
-            
             const char *c = IIFish_Block_ConvertBlockSignature (des3->signature);
             
             class_addMethod(objc_getMetaClass(object_getClassName([IIFishBlockFuncHolder class])), fakeSel, fakeImp, c);
             
         }
-        IIFish_Block_Set_Org_Address(obj, blockOrgFuncAddress);
         block->invoke = (IIFishBlockFunc)IIFishBlockFuncPtr;
     }
 }
