@@ -146,7 +146,7 @@ struct IIFishBlock_layout {
     volatile int32_t flags;
     int32_t reserved;
     void (*invoke)(void *, ...);
-    struct Block_descriptor_1 *descriptor;
+    struct IIFishBlock_descriptor_1 *descriptor;
 };
 typedef  struct IIFishBlock_layout  *IIFishBlock;
 
@@ -210,8 +210,57 @@ static void IIFish_Block_Set_Org_Address(id block, long  long orgFuncAddress) {
     objc_setAssociatedObject(block, @"IIFish_Block_Org_Imp", @(orgFuncAddress), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
+static void * IIFish_Block_Get_DisposeFunc(id block) {
+    return (__bridge void *)objc_getAssociatedObject(block, @"IIFish_Block_DisposeFunc");
+}
+
+static void IIFish_Block_Set_DisposeFunc(id block, void * disposeFunc) {
+    objc_setAssociatedObject(block, @"IIFish_Block_DisposeFunc", (__bridge id)disposeFunc, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+void IIFish_Block_disposeFunc(const void * block_Layout) {
+    // clear Temp Block
+    
+    void (*disposeFunc)(const void *) = IIFish_Block_Get_DisposeFunc((__bridge id)(block_Layout));
+    if (disposeFunc) {
+        disposeFunc(block_Layout);
+    }
+}
+
+static void IIFish_Block_HookDisposeFuncOnces(IIFishBlock block) {
+    if (block->flags & IIFishBLOCK_HAS_COPY_DISPOSE) {
+        struct IIFishBlock_descriptor_2 *descriptor_2  = _IIFish_Block_descriptor_2(block);
+        if (descriptor_2->dispose != IIFish_Block_disposeFunc) {
+            void *disposeFunc = descriptor_2->dispose;
+            IIFish_Block_Set_DisposeFunc((__bridge id)(block), disposeFunc);
+            descriptor_2->dispose = IIFish_Block_disposeFunc;
+        }
+    }
+}
+
+
 static BOOL IIFish_Block_TypeCheck(id object) {
     return [object isKindOfClass:NSClassFromString(@"NSBlock")];
+}
+
+static IIFishBlock IIFish_Block_DeepCopy(IIFishBlock block) {
+    
+    IIFishBlock newBlock;
+    struct IIFishBlock_descriptor_2 *descriptor_2 = _IIFish_Block_descriptor_2(block);
+    if (descriptor_2) {
+        // size == block + ref objects ? need test
+        newBlock = malloc(block->descriptor->size);
+        if (!newBlock) return nil;
+        memmove(newBlock, block, block->descriptor->size);
+        descriptor_2->copy(newBlock, block);
+    } else {
+        newBlock->isa = block->isa;
+        newBlock->flags = block->flags;
+        newBlock->invoke = block->invoke;
+        newBlock->reserved = block->reserved;
+        newBlock->descriptor = block->descriptor;
+    }
+    return newBlock;
 }
 
 static const char *IIFish_Block_ConvertBlockSignature(const char * signature) {
@@ -251,7 +300,6 @@ static void IIFish_Hook_Block(id obj) {
             
             class_addMethod(objc_getMetaClass(object_getClassName([IIFishBlockFuncHolder class])), fakeSel, fakeImp, c);
             
-            NSLog(@"asdasd");
         }
         IIFish_Block_Set_Org_Address(obj, blockOrgFuncAddress);
         block->invoke = (IIFishBlockFunc)IIFishBlockFuncPtr;
