@@ -177,7 +177,8 @@ static struct IIFishBlock_descriptor_3 * _IIFish_Block_descriptor_3(IIFishBlock 
 #pragma mark-
 typedef void (*IIFishBlockFunc) (void*, ...);
 
-static IIFishBlock IIFish_Block_Get_TempBlock(IIFishBlock block);
+static id IIFish_Block_Get_TempBlock(IIFishBlock block);
+static BOOL IIFish_Block_TypeCheck(id object);
 
 static  NSString const *IIFishBlockObserverKey = @"IIFishBlockObserverKey";
 
@@ -186,34 +187,25 @@ void IIFishBlockFuncPtr(IIFishBlock block, ...) {
     struct IIFishBlock_descriptor_3 *descriptor_3 =  _IIFish_Block_descriptor_3(block);
     NSMethodSignature *ms = [NSMethodSignature signatureWithObjCTypes:descriptor_3->signature];
     
-    
     va_list ap;
     va_start(ap, block);
     NSInvocation *invo = IIFish_Encoding(ms, 1, ap);
     va_end(ap);
     
+    id tempBlock = IIFish_Block_Get_TempBlock(block);
     
+    if (!IIFish_Block_TypeCheck(tempBlock)) {
+        struct IIFishBlock_layout tb;
+        [(NSValue *)tempBlock getValue:&tb];
+        tempBlock = (__bridge id)&tb;
+    }
     
-    NSValue *tempObject = objc_getAssociatedObject((__bridge id)block, @"IIFish_Block_TempBlock");
-    
-    struct IIFishBlock_layout block_layout;
-    [(NSValue *)tempObject getValue:&block_layout];
-    IIFishBlock tempBlock = &block_layout;
-    
-    invo.target = (__bridge id)tempBlock;
+    invo.target = tempBlock;
     [invo invoke];
 }
 
-static IIFishBlock IIFish_Block_Get_TempBlock(IIFishBlock block) {
-    id tempObject = objc_getAssociatedObject((__bridge id)block, @"IIFish_Block_TempBlock");
-    if ([tempObject isKindOfClass:[NSValue class]]) {
-        struct IIFishBlock_layout block_layout;
-        [(NSValue *)tempObject getValue:&block_layout];
-        IIFishBlock tempBlock = &block_layout;
-        return tempBlock;
-    } else {
-        return (__bridge void *)tempObject;
-    }
+static id IIFish_Block_Get_TempBlock(IIFishBlock block) {
+     return objc_getAssociatedObject((__bridge id)block, @"IIFish_Block_TempBlock");
 }
 
 static void IIFish_Block_Set_TempGlobalBlock(IIFishBlock block, struct IIFishBlock_layout tempBlockLayout) {
@@ -309,14 +301,29 @@ static NSInvocation * IIFish_Encoding(NSMethodSignature *methodSignature, NSInte
     
     NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:methodSignature];
     
-    for (NSInteger i = 0; i < [methodSignature numberOfArguments]; i ++) {
+    for (NSInteger i = firstArgIndex; i < [methodSignature numberOfArguments]; i ++) {
         const char *argType = [methodSignature getArgumentTypeAtIndex:i];
         
-        switch (argType[i]) {
+        switch (argType[0]) {
+            case 'c' : {
+                char arg = va_arg(list, int);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 'i': {
+                int arg = va_arg(list, int);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 's': {
+                short arg = va_arg(list, int);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+                //....
             case '@': {
                 id arg = va_arg(list, id);
-                [invocation setArgument:(__bridge void *)arg atIndex:i + firstArgIndex];
+                [invocation setArgument:(__bridge void *)arg atIndex:i];
             } break;
+            
+           
         }
         
         
@@ -347,12 +354,13 @@ static NSInvocation * IIFish_Encoding(NSMethodSignature *methodSignature, NSInte
 
 + (void)load {
     
-    void (^testBlock)(id obj)  = ^(id obj) {
+    void (^testBlock)(char c)  = ^(char c) {
         NSLog(@"bbTest");
     };
     IIFish_Hook_Block(testBlock);
-    NSArray *array = [NSArray new];
-    testBlock(array);
+
+    
+    testBlock('c');
     
     NSLog(@"asdasdasdsa");
     
