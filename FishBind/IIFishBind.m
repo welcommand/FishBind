@@ -183,35 +183,43 @@ static struct IIFishBlock_descriptor_3 * _IIFish_Block_descriptor_3(IIFishBlock 
 #pragma mark-
 typedef void (*IIFishBlockFunc) (void*, ...);
 
-static IIFishBlock IIFish_Block_Get_TempBlock(id block);
+static IIFishBlock IIFish_Block_Get_TempBlock(IIFishBlock block);
 
 static  NSString const *IIFishBlockObserverKey = @"IIFishBlockObserverKey";
-//static NSString const *IIFishBlockOrgSelector = @"";
 
 void IIFishBlockFuncPtr(IIFishBlock block, ...) {
     
-    long long funcAddress =  IIFish_Block_Get_Org_Address((__bridge id)block);
-    SEL orgSel = NSSelectorFromString([NSString stringWithFormat:@"IIFishBlock_%@:",@(funcAddress)]);
     
-    NSMethodSignature *ms = [IIFishBlockFuncHolder methodSignatureForSelector:orgSel];
-    NSInvocation *inv = [NSInvocation invocationWithMethodSignature:ms];
-    inv.target = [IIFishBlockFuncHolder class];
-    inv.selector = orgSel;
-    [inv invoke];
-
-    return;
+    struct IIFishBlock_descriptor_3 *descriptor_3 =  _IIFish_Block_descriptor_3(block);
+    NSMethodSignature *ms = [NSMethodSignature signatureWithObjCTypes:descriptor_3->signature];
+    NSInvocation *invo = [NSInvocation invocationWithMethodSignature:ms];
+    
+    
+    IIFishBlock block1 = IIFish_Block_Get_TempBlock(block);
+    
+    invo.target = (__bridge id)block1;
+    
+    [invo invoke];
 }
 
-static IIFishBlock IIFish_Block_Get_TempBlock(id block) {
-    return (__bridge void *)objc_getAssociatedObject(block, @"IIFish_Block_TempBlock");
+static IIFishBlock IIFish_Block_Get_TempBlock(IIFishBlock block) {
+    id tempObject = objc_getAssociatedObject((__bridge id)block, @"IIFish_Block_TempBlock");
+    if ([tempObject isKindOfClass:[NSValue class]]) {
+        IIFishBlock tempBlock = NULL;
+        [(NSValue *)tempObject getValue:tempBlock];
+        return tempBlock;
+    } else {
+        return (__bridge void *)tempObject;
+    }
 }
 
-static void IIFish_Block_Set_TempGlobalBlock(id block, IIFishBlock tempBlock) {
-    objc_setAssociatedObject(block, @"IIFish_Block_TempBlock", (__bridge id)tempBlock, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+static void IIFish_Block_Set_TempGlobalBlock(IIFishBlock block, struct IIFishBlock_layout tempBlockLayout) {
+    NSValue *blockValue = [NSValue value:&tempBlockLayout withObjCType:@encode(struct IIFishBlock_layout)];
+    objc_setAssociatedObject((__bridge id)block, @"IIFish_Block_TempBlock", blockValue, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-static void IIFish_Block_Set_TempMallocBlock(id block, IIFishBlock tempBlock) {
-    objc_setAssociatedObject(block, @"IIFish_Block_TempBlock", (__bridge id)tempBlock, OBJC_ASSOCIATION_ASSIGN);
+static void IIFish_Block_Set_TempMallocBlock(IIFishBlock block, IIFishBlock tempBlock) {
+    objc_setAssociatedObject((__bridge id)block, @"IIFish_Block_TempBlock", (__bridge id)tempBlock, OBJC_ASSOCIATION_ASSIGN);
 }
 
 static void * IIFish_Block_Get_DisposeFunc(id block) {
@@ -242,14 +250,13 @@ static void IIFish_Block_HookDisposeFuncOnces(IIFishBlock block) {
     }
 }
 
-
 static BOOL IIFish_Block_TypeCheck(id object) {
     return [object isKindOfClass:NSClassFromString(@"NSBlock")];
 }
 
 static IIFishBlock IIFish_Block_DeepCopy(IIFishBlock block) {
     
-    IIFishBlock newBlock;
+    IIFishBlock newBlock = NULL;
     struct IIFishBlock_descriptor_2 *descriptor_2 = _IIFish_Block_descriptor_2(block);
     if (descriptor_2) {
         // size == block + ref objects ? need test
@@ -257,51 +264,29 @@ static IIFishBlock IIFish_Block_DeepCopy(IIFishBlock block) {
         if (!newBlock) return nil;
         memmove(newBlock, block, block->descriptor->size);
         descriptor_2->copy(newBlock, block);
-        IIFish_Block_Set_TempMallocBlock((__bridge id)block, newBlock);
+        IIFish_Block_Set_TempMallocBlock(block, newBlock);
         IIFish_Block_HookDisposeFuncOnces(block);
     } else {
-        newBlock->isa = block->isa;
-        newBlock->flags = block->flags;
-        newBlock->invoke = block->invoke;
-        newBlock->reserved = block->reserved;
-        newBlock->descriptor = block->descriptor;
-        IIFish_Block_Set_TempGlobalBlock((__bridge id)block, newBlock);
+        struct IIFishBlock_layout block_layout;
+        block_layout.isa = block->isa;
+        block_layout.flags = block->flags;
+        block_layout.invoke = block->invoke;
+        block_layout.reserved = block->reserved;
+        block_layout.descriptor = block->descriptor;
+        IIFish_Block_Set_TempGlobalBlock(block, block_layout);
     }
     
     return newBlock;
 }
 
-static const char *IIFish_Block_ConvertBlockSignature(const char * signature) {
-    NSString *tString = [NSString stringWithUTF8String:signature];
-//    return [[tString stringByReplacingOccurrencesOfString:@"@?0" withString:[NSString stringWithFormat:@"@0:%@",@(sizeof(id))] options:2 range:[tString rangeOfString:@"@?0"]] UTF8String];
-//    //v8@?0
-//    //v24@0:8@16
-    
-    return [@"v24@0:8" UTF8String];
-}
-
 static void IIFish_Hook_Block(id obj) {
-    if (!IIFish_Block_Get_TempBlock(obj)) {
-        IIFishBlock block = (__bridge IIFishBlock)(obj);
-        long long blockOrgFuncAddress = (long long)block->invoke;
-        
-        NSString *fakeSelString = [NSString stringWithFormat:@"IIFishBlock_%@:",@(blockOrgFuncAddress)];
-        
-        SEL fakeSel = NSSelectorFromString(fakeSelString);
-        if (!class_getClassMethod([IIFishBlockFuncHolder class], fakeSel)) {
-            
-            IIFishBlock newBlock = IIFish_Block_DeepCopy(block);
-            IMP fakeImp = imp_implementationWithBlock((__bridge id)newBlock);
-            struct IIFishBlock_descriptor_3 *des3 =  _IIFish_Block_descriptor_3(block);
-            const char *c = IIFish_Block_ConvertBlockSignature (des3->signature);
-            
-            class_addMethod(objc_getMetaClass(object_getClassName([IIFishBlockFuncHolder class])), fakeSel, fakeImp, c);
-            
-        }
+    IIFishBlock block = (__bridge IIFishBlock)(obj);
+    
+    if (!IIFish_Block_Get_TempBlock(block)) {
+        IIFish_Block_DeepCopy(block);
         block->invoke = (IIFishBlockFunc)IIFishBlockFuncPtr;
     }
 }
-
 
 #pragma mark- Method Hook
 static void IIFish_Hook_Class(id object) {
@@ -323,29 +308,20 @@ static void IIFish_Hook_Class(id object) {
 #pragma mark- test
 
 
-+ (void)test:(id)obj {
-    
++ (void (^)(void))test:(id)obj {
+    return ^() {
+        NSLog(@"bbTest");
+    };
 }
 
 + (void)load {
     
-    //v16@0:8
-    //v8@?0
-    //v24@0:8@16
 
-    
-    NSMethodSignature *ms = [NSMethodSignature signatureWithObjCTypes:"v24@0:8@?16"];
-    
-    
-    Method m = class_getClassMethod(self, @selector(test:));
-    
-    
-    void (^testBlock)() = ^() {
-        NSLog(@"bbTest");
-    };
+    void (^testBlock)(void)  = [self test:nil];
     
     
     IIFish_Hook_Block(testBlock);
+    
     testBlock();
     
     NSLog(@"asdasdasdsa");
