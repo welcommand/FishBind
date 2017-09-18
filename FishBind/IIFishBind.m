@@ -13,8 +13,6 @@
 #pragma mark-
 
 // TODO
-// arg get
-// block copy
 //return?
 
 @implementation IIFish
@@ -56,6 +54,9 @@
     return self;
 }
 @end
+
+static NSInvocation * IIFish_Encoding(NSMethodSignature *methodSignature, NSInteger firstArgIndex, va_list list);
+
 
 #pragma mark-
 #pragma mark- lock
@@ -171,13 +172,6 @@ static struct IIFishBlock_descriptor_3 * _IIFish_Block_descriptor_3(IIFishBlock 
 
 ///////////////////
 
-#pragma mark-
-#pragma mark- block imp holder
-
-@interface IIFishBlockFuncHolder : NSObject
-@end
-@implementation IIFishBlockFuncHolder
-@end
 
 
 #pragma mark-
@@ -189,24 +183,33 @@ static  NSString const *IIFishBlockObserverKey = @"IIFishBlockObserverKey";
 
 void IIFishBlockFuncPtr(IIFishBlock block, ...) {
     
-    
     struct IIFishBlock_descriptor_3 *descriptor_3 =  _IIFish_Block_descriptor_3(block);
     NSMethodSignature *ms = [NSMethodSignature signatureWithObjCTypes:descriptor_3->signature];
-    NSInvocation *invo = [NSInvocation invocationWithMethodSignature:ms];
     
     
-    IIFishBlock block1 = IIFish_Block_Get_TempBlock(block);
+    va_list ap;
+    va_start(ap, block);
+    NSInvocation *invo = IIFish_Encoding(ms, 1, ap);
+    va_end(ap);
     
-    invo.target = (__bridge id)block1;
     
+    
+    NSValue *tempObject = objc_getAssociatedObject((__bridge id)block, @"IIFish_Block_TempBlock");
+    
+    struct IIFishBlock_layout block_layout;
+    [(NSValue *)tempObject getValue:&block_layout];
+    IIFishBlock tempBlock = &block_layout;
+    
+    invo.target = (__bridge id)tempBlock;
     [invo invoke];
 }
 
 static IIFishBlock IIFish_Block_Get_TempBlock(IIFishBlock block) {
     id tempObject = objc_getAssociatedObject((__bridge id)block, @"IIFish_Block_TempBlock");
     if ([tempObject isKindOfClass:[NSValue class]]) {
-        IIFishBlock tempBlock = NULL;
-        [(NSValue *)tempObject getValue:tempBlock];
+        struct IIFishBlock_layout block_layout;
+        [(NSValue *)tempObject getValue:&block_layout];
+        IIFishBlock tempBlock = &block_layout;
         return tempBlock;
     } else {
         return (__bridge void *)tempObject;
@@ -298,7 +301,35 @@ static void IIFish_Hook_Class(id object) {
     }
 }
 
+#pragma mark- Type Encodings
+// https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
 
+
+static NSInvocation * IIFish_Encoding(NSMethodSignature *methodSignature, NSInteger firstArgIndex, va_list list) {
+    
+    NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:methodSignature];
+    
+    for (NSInteger i = 0; i < [methodSignature numberOfArguments]; i ++) {
+        const char *argType = [methodSignature getArgumentTypeAtIndex:i];
+        
+        switch (argType[i]) {
+            case '@': {
+                id arg = va_arg(list, id);
+                [invocation setArgument:(__bridge void *)arg atIndex:i + firstArgIndex];
+            } break;
+        }
+        
+        
+    }
+    
+    return invocation;
+}
+
+
+
+
+
+#pragma mark-
 @implementation IIFishBind
 + (void)bindFishes:(NSArray <IIFish*> *)fishes {
     
@@ -316,13 +347,12 @@ static void IIFish_Hook_Class(id object) {
 
 + (void)load {
     
-
-    void (^testBlock)(void)  = [self test:nil];
-    
-    
+    void (^testBlock)(id obj)  = ^(id obj) {
+        NSLog(@"bbTest");
+    };
     IIFish_Hook_Block(testBlock);
-    
-    testBlock();
+    NSArray *array = [NSArray new];
+    testBlock(array);
     
     NSLog(@"asdasdasdsa");
     
