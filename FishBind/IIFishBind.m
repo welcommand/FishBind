@@ -12,9 +12,6 @@
 
 #pragma mark-
 
-// TODO
-//return?
-
 @implementation IIFish
 + (instancetype)fishWithObject:(id)object keyPatch:(NSString *)keypPatch block:(IIFishMindine)block {
     IIFish *fish = [[IIFish alloc] init];
@@ -175,33 +172,37 @@ static struct IIFishBlock_descriptor_3 * _IIFish_Block_descriptor_3(IIFishBlock 
 
 
 #pragma mark-
+
+
 typedef void (*IIFishBlockFunc) (void*, ...);
 
 static id IIFish_Block_Get_TempBlock(IIFishBlock block);
 static BOOL IIFish_Block_TypeCheck(id object);
+static void * IIFish_Encoding_ReruenValue(const char *returnValueTypeCodeing, void *returnValue);
 
 static  NSString const *IIFishBlockObserverKey = @"IIFishBlockObserverKey";
 
-void IIFishBlockFuncPtr(IIFishBlock block, ...) {
+void* IIFishBlockFuncPtr(IIFishBlock block, ...) {
     
     struct IIFishBlock_descriptor_3 *descriptor_3 =  _IIFish_Block_descriptor_3(block);
     NSMethodSignature *ms = [NSMethodSignature signatureWithObjCTypes:descriptor_3->signature];
-    
     va_list ap;
     va_start(ap, block);
     NSInvocation *invo = IIFish_Encoding(ms, 1, ap);
     va_end(ap);
     
     id tempBlock = IIFish_Block_Get_TempBlock(block);
-    
     if (!IIFish_Block_TypeCheck(tempBlock)) {
         struct IIFishBlock_layout tb;
         [(NSValue *)tempBlock getValue:&tb];
         tempBlock = (__bridge id)&tb;
     }
     
-    invo.target = tempBlock;
-    [invo invoke];
+    void *returnValue = malloc([ms methodReturnLength]);
+    [invo invokeWithTarget:tempBlock];
+    [invo getReturnValue:returnValue];
+    
+    return IIFish_Encoding_ReruenValue([ms methodReturnType], returnValue);
 }
 
 static id IIFish_Block_Get_TempBlock(IIFishBlock block) {
@@ -378,6 +379,33 @@ static NSInvocation * IIFish_Encoding(NSMethodSignature *methodSignature, NSInte
     return invocation;
 }
 
+static void * IIFish_Encoding_ReruenValue(const char *returnValueTypeCodeing, void *returnValue) {
+    
+    
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wint-conversion"
+
+    
+
+    switch (returnValueTypeCodeing[0]) {
+        case 'c' : {
+            char *arg = returnValue;
+            free(returnValue);
+            return *arg;
+        }
+        case 'i': {
+            int *arg = returnValue;
+            return *arg;
+        }
+        
+    }
+    
+    
+    #pragma clang diagnostic pop
+    
+    return nil;
+}
+
 
 #pragma mark-
 @implementation IIFishBind
@@ -397,15 +425,15 @@ static NSInvocation * IIFish_Encoding(NSMethodSignature *methodSignature, NSInte
 
 + (void)load {
     
-    void (^testBlock)(char c, id obj)  = ^(char c, id obj) {
-        NSLog(@"bbTest");
+    int (^testBlock)(char c, id obj)  = ^(char c, id obj) {
+        return 30;
     };
     IIFish_Hook_Block(testBlock);
 
     
-    testBlock('c',[NSArray new]);
+    int i = testBlock('c',[NSArray new]);
     
-    NSLog(@"asdasdasdsa");
+    NSLog(@"asdasdasdsa======");
     
 }
 
