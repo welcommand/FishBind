@@ -296,7 +296,6 @@ static void IIFish_Hook_Class(id object) {
 #pragma mark- Type Encodings
 // https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
 
-
 static NSInvocation * IIFish_Encoding(NSMethodSignature *methodSignature, NSInteger firstArgIndex, va_list list) {
     
     NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:methodSignature];
@@ -317,23 +316,67 @@ static NSInvocation * IIFish_Encoding(NSMethodSignature *methodSignature, NSInte
                 short arg = va_arg(list, int);
                 [invocation setArgument:(void *)&arg atIndex:i];
             } break;
-                //....
+            case 'l': {
+                long arg = va_arg(list, long);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 'q': {
+                long long arg = va_arg(list, long long);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 'C': {
+                unsigned char arg = va_arg(list, int);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 'I': {
+                unsigned int arg = va_arg(list, unsigned int);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 'S': {
+                unsigned short arg = va_arg(list, int);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 'L': {
+                unsigned long arg = va_arg(list, unsigned long);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 'Q': {
+                unsigned long long arg = va_arg(list, unsigned long long);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 'f': {
+                float arg = va_arg(list, double);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 'd': {
+                double arg = va_arg(list, double);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 'B': {
+                BOOL arg = va_arg(list, int);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case '*': {
+                char *arg = va_arg(list, char *);
+                [invocation setArgument:arg atIndex:i];
+            } break;
             case '@': {
                 id arg = va_arg(list, id);
                 [invocation setArgument:(__bridge void *)arg atIndex:i];
             } break;
-            
-           
+            case '#': {
+                Class arg = va_arg(list, Class);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case ':': {
+                SEL arg = va_arg(list, SEL);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
         }
-        
-        
     }
     
     return invocation;
 }
-
-
-
 
 
 #pragma mark-
@@ -354,13 +397,13 @@ static NSInvocation * IIFish_Encoding(NSMethodSignature *methodSignature, NSInte
 
 + (void)load {
     
-    void (^testBlock)(char c)  = ^(char c) {
+    void (^testBlock)(char c, id obj)  = ^(char c, id obj) {
         NSLog(@"bbTest");
     };
     IIFish_Hook_Block(testBlock);
 
     
-    testBlock('c');
+    testBlock('c',[NSArray new]);
     
     NSLog(@"asdasdasdsa");
     
