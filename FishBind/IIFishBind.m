@@ -10,7 +10,9 @@
 #import <pthread.h>
 #import <objc/runtime.h>
 
+
 #pragma mark-
+#pragma mark- base model
 
 @implementation IIFish
 + (instancetype)fishWithObject:(id)object keyPatch:(NSString *)keypPatch block:(IIFishMindine)block {
@@ -115,10 +117,11 @@ static NSMapTable* IIFish_GlobalTable() {
 #pragma mark-
 #pragma mark- Block Hook
 
+#pragma mark- opensource
+
 //code from
 //https://opensource.apple.com/source/libclosure/libclosure-67
 
-///////////////////
 typedef NS_OPTIONS(int, IIFishBlockFlage) {
     IIFishBLOCK_HAS_COPY_DISPOSE =  (1 << 25),
     IIFishBLOCK_HAS_SIGNATURE  =    (1 << 30)
@@ -167,17 +170,12 @@ static struct IIFishBlock_descriptor_3 * _IIFish_Block_descriptor_3(IIFishBlock 
     return (struct IIFishBlock_descriptor_3 *)desc;
 }
 
-///////////////////
-
-
-
 #pragma mark-
-
 
 typedef void (*IIFishBlockFunc) (void*, ...);
 
-static id IIFish_Block_Get_TempBlock(IIFishBlock block);
 static BOOL IIFish_Block_TypeCheck(id object);
+static id IIFish_Block_Get_TempBlock(IIFishBlock block);
 static void * IIFish_Encoding_ReruenValue(const char *returnValueTypeCodeing, void *returnValue);
 
 static  NSString const *IIFishBlockObserverKey = @"IIFishBlockObserverKey";
@@ -227,7 +225,10 @@ static void IIFish_Block_Set_DisposeFunc(id block, void * disposeFunc) {
 }
 
 void IIFish_Block_disposeFunc(const void * block_Layout) {
-    // clear Temp Block
+    
+    IIFishBlock block = (IIFishBlock)block_Layout;
+    id tempBlock = IIFish_Block_Get_TempBlock(block);
+    free((__bridge void *)tempBlock);
     
     void (*disposeFunc)(const void *) = IIFish_Block_Get_DisposeFunc((__bridge id)(block_Layout));
     if (disposeFunc) {
@@ -281,16 +282,6 @@ static void IIFish_Hook_Block(id obj) {
     if (!IIFish_Block_Get_TempBlock(block)) {
         IIFish_Block_DeepCopy(block);
         block->invoke = (IIFishBlockFunc)IIFishBlockFuncPtr;
-    }
-}
-
-#pragma mark- Method Hook
-static void IIFish_Hook_Class(id object) {
-    if (!IIFish_ClassTable_ContainClass([object class])) {
-
-        //objc_allocateClassPair([object class], const char * _Nonnull name, <#size_t extraBytes#>)
-
-        IIFish_ClassTable_AddClass([object class]);
     }
 }
 
@@ -379,14 +370,11 @@ static NSInvocation * IIFish_Encoding(NSMethodSignature *methodSignature, NSInte
     return invocation;
 }
 
-static void * IIFish_Encoding_ReruenValue(const char *returnValueTypeCodeing, void *returnValue) {
-    
+static void* IIFish_Encoding_ReruenValue(const char *returnValueTypeCodeing, void *returnValue) {
     
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wint-conversion"
-
     
-
     switch (returnValueTypeCodeing[0]) {
         case 'c' : {
             char *arg = returnValue;
@@ -397,13 +385,64 @@ static void * IIFish_Encoding_ReruenValue(const char *returnValueTypeCodeing, vo
             int *arg = returnValue;
             return *arg;
         }
-        
+    }
+    
+#pragma clang diagnostic pop
+    
+    return nil;
+}
+
+#pragma mark- Method Hook
+#pragma mark-
+
+static NSString const* IIFish_Class_Prefix = @"IIFish_";
+
+static BOOL IIFish_Class_IsSafeObject(id object) {
+    return [object class] == object_getClass(object) ||
+    [NSStringFromClass(object_getClass(object)) hasPrefix:[IIFish_Class_Prefix copy]];
+}
+
+static Class IIFish_Class_CreateFakeSubClass(id object) {
+    Class orgCls = object_getClass(object);
+    NSString *newClsStr = [NSString stringWithFormat:@"%@%@",IIFish_Class_Prefix,NSStringFromClass(orgCls)];
+    
+    Class newCls = objc_allocateClassPair(orgCls, [newClsStr UTF8String], 0);
+    
+    if (newCls == Nil) {
+        return Nil;
+    }
+    
+    IMP imp_class = imp_implementationWithBlock(^(){
+        return orgCls;
+    });
+    IMP imp_superClass = imp_implementationWithBlock(^(){
+        return class_getSuperclass(orgCls);
+    });
+    
+#define IIFish_Method_Type(aSelector) method_getTypeEncoding( class_getInstanceMethod([NSObject class], (aSelector)))
+    
+    class_addMethod(newCls, @selector(class), imp_class, IIFish_Method_Type(@selector(class)));
+    class_addMethod(newCls, @selector(superclass), imp_superClass, IIFish_Method_Type(@selector(superclass)));
+    class_addIvar(newCls, "_IIFish_Bind", sizeof(BOOL), log2(sizeof(BOOL)), @encode(BOOL));
+    objc_registerClassPair(newCls);
+    
+    return newCls;
+}
+
+static void IIFish_Hook_Class(id object) {
+    if (!IIFish_Class_IsSafeObject(object)) {
+        //error
+        return;
+    }
+    
+    if (!IIFish_ClassTable_ContainClass([object class])) {
+        Class newCls = IIFish_Class_CreateFakeSubClass(object);
+        IIFish_ClassTable_AddClass([object class]);
+        object_setClass(object, newCls);
     }
     
     
-    #pragma clang diagnostic pop
     
-    return nil;
 }
 
 
@@ -425,18 +464,34 @@ static void * IIFish_Encoding_ReruenValue(const char *returnValueTypeCodeing, vo
 
 + (void)load {
     
+    //===== block test ===
     int (^testBlock)(char c, id obj)  = ^(char c, id obj) {
         return 30;
     };
     IIFish_Hook_Block(testBlock);
 
-    
     int i = testBlock('c',[NSArray new]);
     
     NSLog(@"asdasdasdsa======");
     
+    //=====class test ======
+    
+    IIFish *fish = [[IIFish alloc] init];
+    [fish addObserver:fish forKeyPath:@"object" options:NSKeyValueObservingOptionOld context:nil];
+    
+    //NSKVONotifying_IIFish
+
+    
+    
+    IIFish_Hook_Class(fish);
+    
+    
+    
+    
+    NSLog(@"asdasdsa");
+    
+    
+    
 }
-
-
 
 @end
