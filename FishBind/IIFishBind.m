@@ -15,24 +15,32 @@
 #pragma mark- base model
 
 @implementation IIFish
-+ (instancetype)fishWithObject:(id)object keyPatch:(NSString *)keypPatch block:(IIFishMindine)block {
+
++ (instancetype)fish:(id)object oKey:(NSString *)oKey pKey:(NSString *)pKey callBack:(IIFishMindine)callBack {
     IIFish *fish = [[IIFish alloc] init];
     fish.object = object;
-    fish.keyPatch = keypPatch;
-    fish.block = block;
+    fish.oKey = oKey;
+    fish.pKey = pKey;
+    fish.callBack = callBack;
     return fish;
 }
 @end
 
-@implementation IIObserverFish
-+ (instancetype)fishWithObject:(id)object block:(IIFishMindine)block {
-    return [super fishWithObject:object keyPatch:nil block:block];
+@implementation IIPostFish
++ (instancetype)fish:(id)object pKey:(NSString *)pKey {
+    return [super fish:object oKey:nil pKey:pKey callBack:nil];
+}
++ (instancetype)fish:(id)blockObject {
+    return [super fish:blockObject oKey:nil pKey:nil callBack:nil];
 }
 @end
 
-@implementation IIPostFish
-+ (instancetype)fishWithObject:(id)object keyPatch:(NSString *)keypPatch {
-    return [super fishWithObject:object keyPatch:keypPatch block:nil];
+@implementation IIObserverFish
++ (instancetype)fish:(id)object oKey:(NSString *)oKey {
+    return [super fish:object oKey:oKey pKey:nil callBack:nil];
+}
++ (instancetype)fish:(id)object callBack:(IIFishMindine)callBack {
+    return [super fish:object oKey:nil pKey:nil callBack:callBack];
 }
 @end
 

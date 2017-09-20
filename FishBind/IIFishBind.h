@@ -12,22 +12,27 @@ typedef void(^IIFishMindine) (id object, NSString *keyPatch,id resule,NSArray *a
 
 @interface IIFish : NSObject
 @property (nonatomic, assign) id object;
-@property (nonatomic, copy) NSString *keyPatch;
-@property (nonatomic, copy) id block;
-+ (instancetype)fishWithObject:(id)object keyPatch:(NSString *)keypPatch block:(IIFishMindine)block;
-@end
+@property (nonatomic, copy) NSString *oKey;
+@property (nonatomic, copy) NSString *pKey;
+@property (nonatomic, copy) id callBack;
 
-@interface IIObserverFish : IIFish
-+ (instancetype)fishWithObject:(id)object block:(IIFishMindine)block;
++ (instancetype)fish:(id)object oKey:(NSString *)oKey pKey:(NSString *)pKey callBack:(IIFishMindine)callBack;
 @end
 
 @interface IIPostFish : IIFish
-+ (instancetype)fishWithObject:(id)object keyPatch:(NSString *)keypPatch;
++ (instancetype)fish:(id)object pKey:(NSString *)pKey;
++ (instancetype)fish:(id)blockObject;
 @end
 
+@interface IIObserverFish : IIFish
++ (instancetype)fish:(id)object oKey:(NSString *)oKey;
++ (instancetype)fish:(id)object callBack:(IIFishMindine)callBack;
+@end
+
+//@interface NSObject (IIFishBind)
+//@property (nonatomic, strong) id _iiDeadFish;
+//@end
 
 @interface IIFishBind : NSObject
-
 + (void)bindFishes:(NSArray <IIFish*> *)fishes;
-
 @end
