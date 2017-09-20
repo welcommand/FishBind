@@ -387,7 +387,6 @@ static void* IIFish_Encoding_ReruenValue(const char *returnValueTypeCodeing, voi
     switch (returnValueTypeCodeing[0]) {
         case 'c' : {
             char *arg = returnValue;
-            free(returnValue);
             return *arg;
         }
         case 'i': {
@@ -467,7 +466,10 @@ static void IIFish_Hook_Method(id object, SEL cmd) {
     NSString *fakeSelStr = [NSString stringWithFormat:@"%@%@", IIFish_Prefix,NSStringFromSelector(cmd)];
     SEL fakeSel = NSSelectorFromString(fakeSelStr);
     class_addMethod(cls, fakeSel, (IMP)_objc_msgForward , method_getTypeEncoding(orgMethod));
+    class_addMethod(cls, cmd, method_getImplementation(orgMethod), method_getTypeEncoding(orgMethod));
     
+    
+    orgMethod = class_getInstanceMethod(cls, cmd);
     Method fakeMethod = class_getInstanceMethod(cls, fakeSel);
     method_exchangeImplementations(orgMethod, fakeMethod);
     
@@ -487,7 +489,6 @@ static void IIFish_Hook_Method(id object, SEL cmd) {
 #pragma mark-
 #pragma mark- test
 
-
 + (void (^)(void))test:(id)obj {
     return ^() {
         NSLog(@"bbTest");
@@ -504,20 +505,22 @@ static void IIFish_Hook_Method(id object, SEL cmd) {
 
     int i = testBlock('c',[NSArray new]);
     
-    NSLog(@"asdasdasdsa======");
+    NSLog(@"block hook====== i = %@",@(i));
     
     //=====class test ======
     
     IIFishBind *fish = [[IIFishBind alloc] init];
+    IIFishBind *fish1 = [[IIFishBind alloc] init];
+    
     IIFish_Hook_Class(fish);
     IIFish_Hook_Method(fish, @selector(testMethod));
     
     [fish testMethod];
-    
-    
+    [fish1 testMethod];
     
     NSLog(@"asdasdsa");
     
+    //
     
     
 }
