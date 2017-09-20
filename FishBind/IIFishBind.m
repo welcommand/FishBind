@@ -9,6 +9,7 @@
 #import "IIFishBind.h"
 #import <pthread.h>
 #import <objc/runtime.h>
+#import <objc/message.h>
 
 
 #pragma mark-
@@ -403,16 +404,24 @@ static void* IIFish_Encoding_ReruenValue(const char *returnValueTypeCodeing, voi
 #pragma mark- Method Hook
 #pragma mark-
 
-static NSString const* IIFish_Class_Prefix = @"IIFish_";
+static NSString const* IIFish_Prefix = @"IIFish_";
+
+
+void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
+    SEL fakeSel = anInvocation.selector;
+    NSString *orgSelString = [NSString stringWithFormat:@"%@%@", IIFish_Prefix,NSStringFromSelector(fakeSel)];
+    anInvocation.selector = NSSelectorFromString(orgSelString);
+    [anInvocation invoke];
+}
 
 static BOOL IIFish_Class_IsSafeObject(id object) {
     return [object class] == object_getClass(object) ||
-    [NSStringFromClass(object_getClass(object)) hasPrefix:[IIFish_Class_Prefix copy]];
+    [NSStringFromClass(object_getClass(object)) hasPrefix:[IIFish_Prefix copy]];
 }
 
 static Class IIFish_Class_CreateFakeSubClass(id object) {
     Class orgCls = object_getClass(object);
-    NSString *newClsStr = [NSString stringWithFormat:@"%@%@",IIFish_Class_Prefix,NSStringFromClass(orgCls)];
+    NSString *newClsStr = [NSString stringWithFormat:@"%@%@",IIFish_Prefix,NSStringFromClass(orgCls)];
     
     Class newCls = objc_allocateClassPair(orgCls, [newClsStr UTF8String], 0);
     
@@ -431,6 +440,7 @@ static Class IIFish_Class_CreateFakeSubClass(id object) {
     
     class_addMethod(newCls, @selector(class), imp_class, IIFish_Method_Type(@selector(class)));
     class_addMethod(newCls, @selector(superclass), imp_superClass, IIFish_Method_Type(@selector(superclass)));
+    class_addMethod(newCls, @selector(forwardInvocation:), (IMP)fakeForwardInvocation, IIFish_Method_Type(@selector(forwardInvocation:)));
     class_addIvar(newCls, "_IIFish_Bind", sizeof(BOOL), log2(sizeof(BOOL)), @encode(BOOL));
     objc_registerClassPair(newCls);
     
@@ -448,8 +458,18 @@ static void IIFish_Hook_Class(id object) {
         IIFish_ClassTable_AddClass([object class]);
         object_setClass(object, newCls);
     }
+}
+
+static void IIFish_Hook_Method(id object, SEL cmd) {
     
+    Class cls = object_getClass(object);
+    Method orgMethod = class_getInstanceMethod(cls, cmd);
+    NSString *fakeSelStr = [NSString stringWithFormat:@"%@%@", IIFish_Prefix,NSStringFromSelector(cmd)];
+    SEL fakeSel = NSSelectorFromString(fakeSelStr);
+    class_addMethod(cls, fakeSel, (IMP)_objc_msgForward , method_getTypeEncoding(orgMethod));
     
+    Method fakeMethod = class_getInstanceMethod(cls, fakeSel);
+    method_exchangeImplementations(orgMethod, fakeMethod);
     
 }
 
@@ -457,7 +477,11 @@ static void IIFish_Hook_Class(id object) {
 #pragma mark-
 @implementation IIFishBind
 + (void)bindFishes:(NSArray <IIFish*> *)fishes {
-    
+
+}
+
+- (void)testMethod {
+    NSLog(@"asdasdas");
 }
 
 #pragma mark-
@@ -484,15 +508,11 @@ static void IIFish_Hook_Class(id object) {
     
     //=====class test ======
     
-    IIFish *fish = [[IIFish alloc] init];
-    [fish addObserver:fish forKeyPath:@"object" options:NSKeyValueObservingOptionOld context:nil];
-    
-    //NSKVONotifying_IIFish
-
-    
-    
+    IIFishBind *fish = [[IIFishBind alloc] init];
     IIFish_Hook_Class(fish);
+    IIFish_Hook_Method(fish, @selector(testMethod));
     
+    [fish testMethod];
     
     
     
@@ -501,5 +521,6 @@ static void IIFish_Hook_Class(id object) {
     
     
 }
+
 
 @end
