@@ -405,6 +405,50 @@ static void* IIFish_Encoding_ReruenValue(const char *returnValueTypeCodeing, voi
 
 static NSString const* IIFish_Prefix = @"IIFish_";
 
+@interface IIDeadFish : NSProxy
+@property (nonatomic, weak) id orgObject;
+@end
+@implementation IIDeadFish
+
+- (nullable NSMethodSignature *)methodSignatureForSelector:(SEL)sel {
+    return [_orgObject methodSignatureForSelector:sel];
+}
+
+- (void)forwardInvocation:(NSInvocation *)invocation {
+    invocation.target = _orgObject;
+    invocation.selector =NSSelectorFromString( [NSString stringWithFormat:@"%@%@",IIFish_Prefix,NSStringFromSelector(invocation.selector)]);
+    [invocation invoke];
+}
+@end
+
+
+
+@interface NSObject(IIFishBind)
+@property (nonatomic, strong) id iiDeadFish;
+@end
+
+@implementation NSObject (IIFishBind)
+
+- (id)iiDeadFish {
+    IIDeadFish *deadFish = objc_getAssociatedObject(self, _cmd);
+    if (!deadFish) {
+         deadFish = [IIDeadFish alloc];
+        deadFish.orgObject= self;
+        self.iiDeadFish = deadFish;
+    }
+    return deadFish;
+}
+
+- (void)setIiDeadFish:(id)iiDeadFish {
+    objc_setAssociatedObject(self, @selector(iiDeadFish), iiDeadFish, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+@end
+
+
+
+
+
 
 void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
     SEL fakeSel = anInvocation.selector;
@@ -516,6 +560,7 @@ static void IIFish_Hook_Method(id object, SEL cmd) {
     IIFish_Hook_Method(fish, @selector(testMethod));
     
     [fish testMethod];
+    [fish.iiDeadFish testMethod];
     [fish1 testMethod];
     
     NSLog(@"asdasdsa");
