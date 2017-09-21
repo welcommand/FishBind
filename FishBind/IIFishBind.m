@@ -418,9 +418,7 @@ static NSString const* IIFish_Prefix = @"IIFish_";
     invocation.target = _orgObject;
     
     SEL orgSel =NSSelectorFromString( [NSString stringWithFormat:@"%@%@",IIFish_Prefix,NSStringFromSelector(invocation.selector)]);
-    if ([_orgObject respondsToSelector:orgSel]) {
-        invocation.selector = orgSel;
-    }
+    invocation.selector = orgSel;
     [invocation invoke];
 }
 @end
@@ -520,7 +518,7 @@ void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
     
     // fake code
     
-    NSInteger returnValue;
+    NSString *returnValue;
     [anInvocation getArgument:&returnValue atIndex:2];
     
     
@@ -532,7 +530,7 @@ void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
     
     for(IIFish *fish in observers) {
         SEL sel = fish.oKey;
-        [[fish.object iiDeadFish] setValue:@(returnValue) forKey:NSStringFromSelector(sel)];
+        [[fish.object iiDeadFish] performSelector:sel withObject:returnValue];
     }
 }
 

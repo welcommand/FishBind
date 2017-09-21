@@ -13,7 +13,6 @@
 #import "IIFishBind.h"
 
 @interface ViewController ()
-
 @end
 
 @implementation ViewController
@@ -23,19 +22,18 @@
     
     TestA *t1 = [[TestA alloc] init];
     TestB *t2 = [[TestB alloc] init];
-    
+
     [IIFishBind bindFishes:@[
-                             [IIFish fish:t1 oKey:@selector(age) pKey:@selector(setAge:) callBack:nil],
-                             [IIFish fish:t2 oKey:@selector(testB) pKey:@selector(setTestB:) callBack:nil],
+                             [IIFish fish:t1 oKey:@selector(setName:) pKey:@selector(setName:) callBack:nil],
+                             [IIFish fish:t2 oKey:@selector(setTabs:) pKey:@selector(setTabs:) callBack:nil],
                              ]];
-    
+
     NSLog(@"======");
-    t1.age = 100;
-    NSLog(@"=====%@",@(t2.testB));
-    
-    t2.testB = 200;
-    NSLog(@"======%@",@(t1.age));
-    
+    t1.name = @"hahahaha";
+    NSLog(@"=====%@",t2.tabs);
+
+    t2.tabs = @"aasdasdasds";
+    NSLog(@"======%@",t1.name);
     
 }
 

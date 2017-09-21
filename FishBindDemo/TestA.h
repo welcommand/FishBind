@@ -10,6 +10,6 @@
 
 @interface TestA : NSObject
 
-@property (nonatomic, assign) NSInteger age;
+@property (nonatomic, strong) NSString *name;
 
 @end

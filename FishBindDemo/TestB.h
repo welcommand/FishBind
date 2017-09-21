@@ -10,6 +10,6 @@
 
 @interface TestB : NSObject
 
-@property (nonatomic, assign) NSInteger testB;
+@property (nonatomic, strong) NSString *tabs;
 
 @end
