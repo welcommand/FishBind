@@ -41,24 +41,6 @@
 }
 @end
 
-#pragma mark-
-#pragma mark - info
-
-@interface IIFishInfo : NSObject
-@property (nonatomic, copy) NSString *key;
-@property (nonatomic, strong) NSHashTable *observers;
-@end
-
-@implementation IIFishInfo
-- (instancetype)initWithKey:(NSString *)key {
-    if (self = [super init]) {
-        _key = [key copy];
-        _observers = [NSHashTable hashTableWithOptions:NSPointerFunctionsWeakMemory];
-    }
-    return self;
-}
-@end
-
 static NSInvocation * IIFish_Encoding(NSMethodSignature *methodSignature, NSInteger firstArgIndex, va_list list);
 
 
@@ -414,7 +396,11 @@ static NSString const* IIFish_Prefix = @"IIFish_";
     invocation.target = _orgObject;
     
     SEL orgSel =NSSelectorFromString( [NSString stringWithFormat:@"%@%@",IIFish_Prefix,NSStringFromSelector(invocation.selector)]);
-    invocation.selector = orgSel;
+    Method method = class_getInstanceMethod(object_getClass(_orgObject), orgSel);
+    if (method) {
+        invocation.selector = orgSel;
+    }
+    
     [invocation invoke];
 }
 @end
