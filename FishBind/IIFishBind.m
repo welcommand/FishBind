@@ -69,7 +69,7 @@ static NSInvocation * IIFish_Encoding(NSMethodSignature *methodSignature, NSInte
 #pragma mark-
 #pragma mark- lock
 
-static void IIFist_Lock(dispatch_block_t block) {
+static void IIFish_Lock(dispatch_block_t block) {
     static pthread_mutex_t mutex;
     pthread_mutex_init(&mutex, NULL);
     pthread_mutex_lock(&mutex);
@@ -408,8 +408,8 @@ static NSString const* IIFish_Prefix = @"IIFish_";
 @interface IIDeadFish : NSProxy
 @property (nonatomic, weak) id orgObject;
 @end
-@implementation IIDeadFish
 
+@implementation IIDeadFish
 - (nullable NSMethodSignature *)methodSignatureForSelector:(SEL)sel {
     return [_orgObject methodSignatureForSelector:sel];
 }
@@ -422,12 +422,14 @@ static NSString const* IIFish_Prefix = @"IIFish_";
 @end
 
 
+#pragma mark-
+#pragma mark- deadfish
 
-@interface NSObject(IIFishBind)
+@interface NSObject(IIFishBind_DeadFish)
 @property (nonatomic, strong) id iiDeadFish;
 @end
 
-@implementation NSObject (IIFishBind)
+@implementation NSObject (IIFishBind_DeadFish)
 
 - (id)iiDeadFish {
     IIDeadFish *deadFish = objc_getAssociatedObject(self, _cmd);
@@ -445,8 +447,33 @@ static NSString const* IIFish_Prefix = @"IIFish_";
 
 @end
 
+#pragma mark-
+#pragma mark- methodAsset
 
+@interface IIFishMethodAsset : NSObject
 
+@property (nonatomic, strong) NSMapTable *methodAsset;
+@property (nonatomic, strong) dispatch_queue_t rw_queue;
+
+- (void)getMethodAssetSafe:(void (^)(NSMapTable *methodAsset))asset;
+
+@end
+
+@implementation IIFishMethodAsset
+
+- (id)init {
+    if (self  = [super init]) {
+        _methodAsset = [NSMapTable mapTableWithKeyOptions:NSPointerFunctionsStrongMemory valueOptions:NSPointerFunctionsWeakMemory];
+    }
+    return self;
+}
+
+- (void)getMethodAssetSafe:(void (^)(NSMapTable *))asset {
+    IIFish_Lock(^{
+        asset(_methodAsset);
+    });
+}
+@end
 
 
 
@@ -521,17 +548,27 @@ static void IIFish_Hook_Method(id object, SEL cmd) {
 
 
 #pragma mark-
-@implementation IIFishBind
-+ (void)bindFishes:(NSArray <IIFish*> *)fishes {
 
+@implementation IIFishBind
+
++ (void)bindFishes:(NSArray <IIFish*> *)fishes {
+    
 }
+
++ (void)removeFish:(NSArray <IIFish *> *)fishes {
+    
+}
+
+
+
+
+
+#pragma mark-
+#pragma mark- test
 
 - (void)testMethod {
     NSLog(@"asdasdas");
 }
-
-#pragma mark-
-#pragma mark- test
 
 + (void (^)(void))test:(id)obj {
     return ^() {
@@ -559,9 +596,9 @@ static void IIFish_Hook_Method(id object, SEL cmd) {
     IIFish_Hook_Class(fish);
     IIFish_Hook_Method(fish, @selector(testMethod));
     
-    [fish testMethod];
-    [fish.iiDeadFish testMethod];
-    [fish1 testMethod];
+    [fish testMethod]; // hook
+    [fish.iiDeadFish testMethod]; // not hook
+    [fish1 testMethod]; // not hook
     
     NSLog(@"asdasdsa");
     
