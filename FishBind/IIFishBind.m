@@ -452,10 +452,11 @@ static NSString const* IIFish_Prefix = @"IIFish_";
 
 @interface IIFishMethodAsset : NSObject
 
-@property (nonatomic, strong) NSMapTable *methodAsset;
-@property (nonatomic, strong) dispatch_queue_t rw_queue;
+@property (nonatomic, strong) NSMutableDictionary *methodAsset;
 
-- (void)getMethodAssetSafe:(void (^)(NSMapTable *methodAsset))asset;
+- (void)methodAsset:(void (^)(NSMutableDictionary *methodAsset))asset;
+
+- (void)observerFishesWithKey:(NSString *)key asset:(void (^)(NSHashTable *observerFishes))asset;
 
 @end
 
@@ -463,17 +464,39 @@ static NSString const* IIFish_Prefix = @"IIFish_";
 
 - (id)init {
     if (self  = [super init]) {
-        _methodAsset = [NSMapTable mapTableWithKeyOptions:NSPointerFunctionsStrongMemory valueOptions:NSPointerFunctionsWeakMemory];
+        _methodAsset = [NSMutableDictionary new];
     }
     return self;
 }
 
-- (void)getMethodAssetSafe:(void (^)(NSMapTable *))asset {
+- (void)methodAsset:(void (^)(NSMutableDictionary *methodAsset))asset {
     IIFish_Lock(^{
         asset(_methodAsset);
     });
 }
+
+- (void)observerFishesWithKey:(NSString *)key asset:(void (^)(NSHashTable *observerFishes))asset {
+    [self methodAsset:^(NSMutableDictionary *methodAsset) {
+        NSHashTable *hashTable = [methodAsset objectForKey:key];
+        if (!hashTable) {
+            hashTable = [NSHashTable hashTableWithOptions:NSPointerFunctionsWeakMemory];
+            [methodAsset addEntriesFromDictionary:@{key : hashTable}];
+        }
+        asset(hashTable);
+    }];
+}
+
 @end
+
+
+static IIFishMethodAsset *IIFish_Class_Get_Asset(id object) {
+    IIFishMethodAsset *asset = objc_getAssociatedObject(object, "IIFish_Class_Get_Asset");
+    if (!asset) {
+        asset = [[IIFishMethodAsset alloc] init];
+        objc_setAssociatedObject(object, "IIFish_Class_Get_Asset", asset, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+    return asset;
+}
 
 
 
@@ -552,6 +575,25 @@ static void IIFish_Hook_Method(id object, SEL cmd) {
 @implementation IIFishBind
 
 + (void)bindFishes:(NSArray <IIFish*> *)fishes {
+    
+    for (IIFish *fish in fishes) {
+        Class cls = [fish class];
+        if (cls == [IIObserverFish class]) continue;
+        NSString *key = fish.oKey;
+        SEL sel = NSSelectorFromString(key);
+        // key == nil  key == block
+        IIFish_Hook_Class(fish);
+        IIFish_Hook_Method(fish, sel);
+        IIFishMethodAsset *asset = IIFish_Class_Get_Asset(fish);
+        [asset observerFishesWithKey:key asset:^(NSHashTable *observerFishes) {
+            for (IIFish *f in fishes) {
+                Class oCls = [f class];
+                if (oCls == [IIPostFish class] ||  f == fish) continue;
+                [observerFishes addObject:f];
+            }
+        }];
+    }
+        
     
 }
 
