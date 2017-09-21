@@ -7,6 +7,10 @@
 //
 
 #import "ViewController.h"
+#import "TestA.h"
+#import "TestB.h"
+
+#import "IIFishBind.h"
 
 @interface ViewController ()
 
@@ -16,13 +20,23 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // Do any additional setup after loading the view, typically from a nib.
-}
-
-
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
+    
+    TestA *t1 = [[TestA alloc] init];
+    TestB *t2 = [[TestB alloc] init];
+    
+    [IIFishBind bindFishes:@[
+                             [IIFish fish:t1 oKey:@selector(age) pKey:@selector(setAge:) callBack:nil],
+                             [IIFish fish:t2 oKey:@selector(testB) pKey:@selector(setTestB:) callBack:nil],
+                             ]];
+    
+    NSLog(@"======");
+    t1.age = 100;
+    NSLog(@"=====%@",@(t2.testB));
+    
+    t2.testB = 200;
+    NSLog(@"======%@",@(t1.age));
+    
+    
 }
 
 

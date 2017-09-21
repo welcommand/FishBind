@@ -17,8 +17,8 @@
 
 @implementation IIFish
 
-+ (instancetype)fish:(id)object oKey:(NSString *)oKey pKey:(NSString *)pKey callBack:(IIFishMindine)callBack {
-    IIFish *fish = [[IIFish alloc] init];
++ (instancetype)fish:(id)object oKey:(SEL)oKey pKey:(SEL)pKey callBack:(IIFishMindine)callBack {
+    IIFish *fish = [[self alloc] init];
     fish.object = object;
     fish.oKey = oKey;
     fish.pKey = pKey;
@@ -28,7 +28,7 @@
 @end
 
 @implementation IIPostFish
-+ (instancetype)fish:(id)object pKey:(NSString *)pKey {
++ (instancetype)fish:(id)object pKey:(SEL)pKey {
     return [super fish:object oKey:nil pKey:pKey callBack:nil];
 }
 + (instancetype)fish:(id)blockObject {
@@ -37,7 +37,7 @@
 @end
 
 @implementation IIObserverFish
-+ (instancetype)fish:(id)object oKey:(NSString *)oKey {
++ (instancetype)fish:(id)object oKey:(SEL)oKey {
     return [super fish:object oKey:oKey pKey:nil callBack:nil];
 }
 + (instancetype)fish:(id)object callBack:(IIFishMindine)callBack {
@@ -416,7 +416,11 @@ static NSString const* IIFish_Prefix = @"IIFish_";
 
 - (void)forwardInvocation:(NSInvocation *)invocation {
     invocation.target = _orgObject;
-    invocation.selector =NSSelectorFromString( [NSString stringWithFormat:@"%@%@",IIFish_Prefix,NSStringFromSelector(invocation.selector)]);
+    
+    SEL orgSel =NSSelectorFromString( [NSString stringWithFormat:@"%@%@",IIFish_Prefix,NSStringFromSelector(invocation.selector)]);
+    if ([_orgObject respondsToSelector:orgSel]) {
+        invocation.selector = orgSel;
+    }
     [invocation invoke];
 }
 @end
@@ -432,6 +436,10 @@ static NSString const* IIFish_Prefix = @"IIFish_";
 @implementation NSObject (IIFishBind_DeadFish)
 
 - (id)iiDeadFish {
+    Class cls = object_getClass(self);
+    if (![NSStringFromClass(cls) hasPrefix:[IIFish_Prefix copy]]) {
+        return self;
+    }
     IIDeadFish *deadFish = objc_getAssociatedObject(self, _cmd);
     if (!deadFish) {
         deadFish = [IIDeadFish alloc];
@@ -509,6 +517,23 @@ void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
     NSString *orgSelString = [NSString stringWithFormat:@"%@%@", IIFish_Prefix,NSStringFromSelector(fakeSel)];
     anInvocation.selector = NSSelectorFromString(orgSelString);
     [anInvocation invoke];
+    
+    // fake code
+    
+    NSInteger returnValue;
+    [anInvocation getArgument:&returnValue atIndex:2];
+    
+    
+    IIFishMethodAsset *asseet = IIFish_Class_Get_Asset(self);
+    __block NSArray *observers;
+    [asseet observerFishesWithKey:NSStringFromSelector(fakeSel) asset:^(NSMutableSet<IIFish *> *observerFishes) {
+        observers = [[observerFishes allObjects] copy];
+    }];
+    
+    for(IIFish *fish in observers) {
+        SEL sel = fish.oKey;
+        [[fish.object iiDeadFish] setValue:@(returnValue) forKey:NSStringFromSelector(sel)];
+    }
 }
 
 static BOOL IIFish_Class_IsSafeObject(id object) {
@@ -583,14 +608,13 @@ static void IIFish_Hook_Method(id object, SEL cmd) {
     for (IIFish *fish in fishes) {
         Class cls = [fish class];
         if (cls == [IIObserverFish class]) continue;
-        NSString *key = fish.oKey;
-        SEL sel = NSSelectorFromString(key);
+        SEL sel = fish.pKey;
         // key == nil  key == block
         id object = fish.object;
         IIFish_Hook_Class(object);
         IIFish_Hook_Method(object, sel);
         IIFishMethodAsset *asset = IIFish_Class_Get_Asset(object);
-        [asset observerFishesWithKey:key asset:^(NSMutableSet<IIFish *> *observerFishes) {
+        [asset observerFishesWithKey:NSStringFromSelector(sel) asset:^(NSMutableSet<IIFish *> *observerFishes) {
             for (IIFish *f in fishes) {
                 Class oCls = [f class];
                 if (oCls == [IIPostFish class] ||  f == fish) continue;
@@ -624,33 +648,33 @@ static void IIFish_Hook_Method(id object, SEL cmd) {
 + (void)load {
     
     //===== block test ===
-    int (^testBlock)(char c, id obj)  = ^(char c, id obj) {
-        return 30;
-    };
-    IIFish_Hook_Block(testBlock);
-    
-    int i = testBlock('c',[NSArray new]);
-    
-    NSLog(@"block hook====== i = %@",@(i));
+//    int (^testBlock)(char c, id obj)  = ^(char c, id obj) {
+//        return 30;
+//    };
+//    IIFish_Hook_Block(testBlock);
+//
+//    int i = testBlock('c',[NSArray new]);
+//
+//    NSLog(@"block hook====== i = %@",@(i));
     
     //=====class test ======
     
-    IIFishBind *fish = [[IIFishBind alloc] init];
-    IIFishBind *fish1 = [[IIFishBind alloc] init];
+//    IIFishBind *fish = [[IIFishBind alloc] init];
+//    IIFishBind *fish1 = [[IIFishBind alloc] init];
+//
+//    IIFish_Hook_Class(fish);
+//    IIFish_Hook_Method(fish, @selector(testMethod));
+//
+//    [fish testMethod]; // hook
+//    [fish.iiDeadFish testMethod]; // not hook
+//    [fish1 testMethod]; // not hook
+//
+//    NSLog(@"asdasdsa");
     
-    IIFish_Hook_Class(fish);
-    IIFish_Hook_Method(fish, @selector(testMethod));
-    
-    [fish testMethod]; // hook
-    [fish.iiDeadFish testMethod]; // not hook
-    [fish1 testMethod]; // not hook
-    
-    NSLog(@"asdasdsa");
-    
-    //
-    
+    //=======  bind test ====
     
 }
-
-
 @end
+
+
+
