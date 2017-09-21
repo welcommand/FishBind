@@ -213,7 +213,7 @@ void* IIFishBlockFuncPtr(IIFishBlock block, ...) {
 }
 
 static id IIFish_Block_Get_TempBlock(IIFishBlock block) {
-     return objc_getAssociatedObject((__bridge id)block, @"IIFish_Block_TempBlock");
+    return objc_getAssociatedObject((__bridge id)block, @"IIFish_Block_TempBlock");
 }
 
 static void IIFish_Block_Set_TempGlobalBlock(IIFishBlock block, struct IIFishBlock_layout tempBlockLayout) {
@@ -434,7 +434,7 @@ static NSString const* IIFish_Prefix = @"IIFish_";
 - (id)iiDeadFish {
     IIDeadFish *deadFish = objc_getAssociatedObject(self, _cmd);
     if (!deadFish) {
-         deadFish = [IIDeadFish alloc];
+        deadFish = [IIDeadFish alloc];
         deadFish.orgObject= self;
         self.iiDeadFish = deadFish;
     }
@@ -448,6 +448,10 @@ static NSString const* IIFish_Prefix = @"IIFish_";
 @end
 
 #pragma mark-
+#pragma mark- observer Fish info
+
+
+#pragma mark-
 #pragma mark- methodAsset
 
 @interface IIFishMethodAsset : NSObject
@@ -455,8 +459,7 @@ static NSString const* IIFish_Prefix = @"IIFish_";
 @property (nonatomic, strong) NSMutableDictionary *methodAsset;
 
 - (void)methodAsset:(void (^)(NSMutableDictionary *methodAsset))asset;
-
-- (void)observerFishesWithKey:(NSString *)key asset:(void (^)(NSHashTable *observerFishes))asset;
+- (void)observerFishesWithKey:(NSString *)key asset:(void (^)(NSMutableSet <IIFish *>*observerFishes))asset;
 
 @end
 
@@ -475,14 +478,15 @@ static NSString const* IIFish_Prefix = @"IIFish_";
     });
 }
 
-- (void)observerFishesWithKey:(NSString *)key asset:(void (^)(NSHashTable *observerFishes))asset {
+- (void)observerFishesWithKey:(NSString *)key asset:(void (^)(NSMutableSet <IIFish *>*observerFishes))asset {
     [self methodAsset:^(NSMutableDictionary *methodAsset) {
-        NSHashTable *hashTable = [methodAsset objectForKey:key];
-        if (!hashTable) {
-            hashTable = [NSHashTable hashTableWithOptions:NSPointerFunctionsWeakMemory];
-            [methodAsset addEntriesFromDictionary:@{key : hashTable}];
+        
+        NSMutableSet *fishesSet = [methodAsset objectForKey:key];
+        if (!fishesSet) {
+            fishesSet = [NSMutableSet new];
+            [methodAsset addEntriesFromDictionary:@{key : fishesSet}];
         }
-        asset(hashTable);
+        asset(fishesSet);
     }];
 }
 
@@ -582,10 +586,11 @@ static void IIFish_Hook_Method(id object, SEL cmd) {
         NSString *key = fish.oKey;
         SEL sel = NSSelectorFromString(key);
         // key == nil  key == block
-        IIFish_Hook_Class(fish);
-        IIFish_Hook_Method(fish, sel);
-        IIFishMethodAsset *asset = IIFish_Class_Get_Asset(fish);
-        [asset observerFishesWithKey:key asset:^(NSHashTable *observerFishes) {
+        id object = fish.object;
+        IIFish_Hook_Class(object);
+        IIFish_Hook_Method(object, sel);
+        IIFishMethodAsset *asset = IIFish_Class_Get_Asset(object);
+        [asset observerFishesWithKey:key asset:^(NSMutableSet<IIFish *> *observerFishes) {
             for (IIFish *f in fishes) {
                 Class oCls = [f class];
                 if (oCls == [IIPostFish class] ||  f == fish) continue;
@@ -593,8 +598,6 @@ static void IIFish_Hook_Method(id object, SEL cmd) {
             }
         }];
     }
-        
-    
 }
 
 + (void)removeFish:(NSArray <IIFish *> *)fishes {
@@ -625,7 +628,7 @@ static void IIFish_Hook_Method(id object, SEL cmd) {
         return 30;
     };
     IIFish_Hook_Block(testBlock);
-
+    
     int i = testBlock('c',[NSArray new]);
     
     NSLog(@"block hook====== i = %@",@(i));
