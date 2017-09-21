@@ -12,20 +12,18 @@ typedef void(^IIFishMindine) (id object, NSString *keyPatch,id resule,NSArray *a
 
 @interface IIFish : NSObject
 @property (nonatomic, assign) id object;
-@property (nonatomic, assign) SEL oKey;
-@property (nonatomic, assign) SEL pKey;
+@property (nonatomic, assign) SEL key;
 @property (nonatomic, copy) id callBack;
 
-+ (instancetype)fish:(id)object oKey:(SEL)oKey pKey:(SEL)pKey callBack:(IIFishMindine)callBack;
++ (instancetype)fish:(id)object key:(SEL)key callBack:(IIFishMindine)callBack;
 @end
 
 @interface IIPostFish : IIFish
-+ (instancetype)fish:(id)object pKey:(SEL)pKey;
++ (instancetype)fish:(id)object key:(SEL)key;
 + (instancetype)fish:(id)blockObject;
 @end
 
 @interface IIObserverFish : IIFish
-+ (instancetype)fish:(id)object oKey:(SEL)oKey;
 + (instancetype)fish:(id)object callBack:(IIFishMindine)callBack;
 @end
 

@@ -24,14 +24,14 @@
     TestB *t2 = [[TestB alloc] init];
 
     [IIFishBind bindFishes:@[
-                             [IIFish fish:t1 oKey:@selector(setName:) pKey:@selector(setName:) callBack:nil],
-                             [IIFish fish:t2 oKey:@selector(setTabs:) pKey:@selector(setTabs:) callBack:nil],
+                             [IIFish fish:t1 key:@selector(setName:) callBack:nil],
+                             [IIFish fish:t2 key:@selector(setTabs:) callBack:nil],
                              ]];
 
     NSLog(@"======");
     t1.name = @"hahahaha";
     NSLog(@"=====%@",t2.tabs);
-
+    
     t2.tabs = @"aasdasdasds";
     NSLog(@"======%@",t1.name);
     

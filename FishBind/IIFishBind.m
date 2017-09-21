@@ -17,31 +17,27 @@
 
 @implementation IIFish
 
-+ (instancetype)fish:(id)object oKey:(SEL)oKey pKey:(SEL)pKey callBack:(IIFishMindine)callBack {
++ (instancetype)fish:(id)object key:(SEL)key callBack:(IIFishMindine)callBack {
     IIFish *fish = [[self alloc] init];
     fish.object = object;
-    fish.oKey = oKey;
-    fish.pKey = pKey;
+    fish.key = key;
     fish.callBack = callBack;
     return fish;
 }
 @end
 
 @implementation IIPostFish
-+ (instancetype)fish:(id)object pKey:(SEL)pKey {
-    return [super fish:object oKey:nil pKey:pKey callBack:nil];
++ (instancetype)fish:(id)object key:(SEL)key {
+    return [super fish:object key:key callBack:nil];
 }
 + (instancetype)fish:(id)blockObject {
-    return [super fish:blockObject oKey:nil pKey:nil callBack:nil];
+    return [super fish:blockObject key:nil callBack:nil];
 }
 @end
 
 @implementation IIObserverFish
-+ (instancetype)fish:(id)object oKey:(SEL)oKey {
-    return [super fish:object oKey:oKey pKey:nil callBack:nil];
-}
 + (instancetype)fish:(id)object callBack:(IIFishMindine)callBack {
-    return [super fish:object oKey:nil pKey:nil callBack:callBack];
+    return [super fish:object key:nil callBack:callBack];
 }
 @end
 
@@ -528,10 +524,10 @@ void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
         observers = [[observerFishes allObjects] copy];
     }];
     
-    for(IIFish *fish in observers) {
-        SEL sel = fish.oKey;
-        [[fish.object iiDeadFish] performSelector:sel withObject:returnValue];
-    }
+//    for(IIFish *fish in observers) {
+//        SEL sel = fish.oKey;
+//        [[fish.object iiDeadFish] performSelector:sel withObject:returnValue];
+//    }
 }
 
 static BOOL IIFish_Class_IsSafeObject(id object) {
@@ -606,7 +602,7 @@ static void IIFish_Hook_Method(id object, SEL cmd) {
     for (IIFish *fish in fishes) {
         Class cls = [fish class];
         if (cls == [IIObserverFish class]) continue;
-        SEL sel = fish.pKey;
+        SEL sel = fish.key;
         // key == nil  key == block
         id object = fish.object;
         IIFish_Hook_Class(object);
