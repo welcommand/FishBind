@@ -8,8 +8,6 @@
 
 #import <Foundation/Foundation.h>
 
-
-
 typedef void(^IIFishMindine) (id object, NSString *keyPatch,id resule,NSArray *args);
 
 @interface IIFish : NSObject
@@ -36,8 +34,7 @@ typedef void(^IIFishMindine) (id object, NSString *keyPatch,id resule,NSArray *a
 
 @end
 
-
 @interface IIFishBind : NSObject
 + (void)bindFishes:(NSArray <IIFish*> *)fishes;
-+ (void)removeFish:(NSArray <IIFish *> *)fishes;
++ (void)removeFish:(IIFish *)fishes;
 @end

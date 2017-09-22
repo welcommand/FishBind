@@ -23,10 +23,10 @@
     TestA *t1 = [[TestA alloc] init];
     TestB *t2 = [[TestB alloc] init];
 
-    [IIFishBind bindFishes:@[
-                             [IIFish fish:t1 key:@selector(setName:) callBack:nil],
-                             [IIFish fish:t2 key:@selector(setTabs:) callBack:nil],
-                             ]];
+//    [IIFishBind bindFishes:@[
+//                             [IIFish fish:t1 key:@selector(setName:) callBack:nil],
+//                             [IIFish fish:t2 key:@selector(setTabs:) callBack:nil],
+//                             ]];
 
     NSLog(@"======");
     t1.name = @"hahahaha";
