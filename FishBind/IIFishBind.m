@@ -15,31 +15,53 @@
 #pragma mark-
 #pragma mark- base model
 
+typedef NS_OPTIONS(NSInteger, IIFishFlage) {
+    IIFish_IsBlock = (1 << 2),
+    IIFish_Post =  (1 << 4),
+    IIFish_Observer  =    (1 << 8)
+};
+
+
 @implementation IIFish
 
-+ (instancetype)fish:(id)object key:(SEL)key callBack:(IIFishMindine)callBack {
++ (instancetype)fish:(id)object property:(NSString*)property selector:(SEL)selector callBack:(IIFishMindine)callBack flag:(NSInteger)flag {
     IIFish *fish = [[self alloc] init];
     fish.object = object;
-    fish.key = key;
+    fish.selector = selector;
+    fish.property = property;
     fish.callBack = callBack;
+    fish.flag = flag;
     return fish;
 }
+
+
++ (instancetype)both:(id)object selector:(SEL)selector callBack:(IIFishMindine)callBack {
+    return [self  fish:object property:nil selector:selector callBack:callBack flag:IIFish_Observer | IIFish_Post];
+}
++ (instancetype)both:(id)object property:(NSString*)property {
+    return [self fish:object property:property selector:nil callBack:nil flag:IIFish_Observer | IIFish_Post];
+}
+
++ (instancetype)postBlock:(id)blockObject {
+    return [self fish:blockObject property:nil selector:nil callBack:nil flag:IIFish_Post | IIFish_IsBlock];
+}
+
++ (instancetype)post:(id)object property:(NSString *)property {
+    return [self fish:object property:property selector:nil callBack:nil flag:IIFish_Post];
+}
++ (instancetype)post:(id)object selector:(SEL)selector {
+    return [self fish:object property:nil selector:selector callBack:nil flag:IIFish_Post];
+}
+
++ (instancetype)observer:(id)object property:(NSString *)property {
+    return [self fish:object property:property selector:nil callBack:nil flag:IIFish_Observer];
+}
++ (instancetype)observer:(id)object callBack:(IIFishMindine)callBack {
+    return [self fish:object property:nil selector:nil callBack:callBack flag:IIFish_Observer];
+}
+
 @end
 
-@implementation IIPostFish
-+ (instancetype)fish:(id)object key:(SEL)key {
-    return [super fish:object key:key callBack:nil];
-}
-+ (instancetype)fish:(id)blockObject {
-    return [super fish:blockObject key:nil callBack:nil];
-}
-@end
-
-@implementation IIObserverFish
-+ (instancetype)fish:(id)object callBack:(IIFishMindine)callBack {
-    return [super fish:object key:nil callBack:callBack];
-}
-@end
 
 static NSInvocation * IIFish_Encoding(NSMethodSignature *methodSignature, NSInteger firstArgIndex, va_list list);
 
