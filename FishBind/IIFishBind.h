@@ -8,7 +8,7 @@
 
 #import <Foundation/Foundation.h>
 
-typedef void(^IIFishMindine) (id object, NSString *keyPatch,id resule,NSArray *args);
+typedef void(^IIFishMindine) (id object, NSString *key, id resule,NSArray *args, id deadFish);
 
 @interface IIFish : NSObject
 @property (nonatomic, assign) NSInteger flag;

@@ -472,7 +472,11 @@ static NSString const* IIFish_Prefix = @"IIFish_";
 
 @interface IIFishMethodAsset : NSObject
 
+// key : orgSelector value : info
 @property (nonatomic, strong) NSMutableDictionary *methodAsset;
+
+//key : orgSelector value : observer
+@property (nonatomic, strong) NSMutableDictionary *observerAsset;
 
 - (void)methodAsset:(void (^)(NSMutableDictionary *methodAsset))asset;
 - (void)observerFishesWithKey:(NSString *)key asset:(void (^)(NSMutableSet <IIFish *>*observerFishes))asset;
@@ -608,7 +612,32 @@ static void IIFish_Hook_Method(id object, SEL cmd) {
 
 #pragma mark- Property helper
 
-
+static SEL IIFish_Property_SetSelector(Class cls, const char *propertyName) {
+    objc_property_t property = class_getProperty(cls, propertyName);
+    if (!property) return 0;
+    
+    unsigned int count;
+    objc_property_attribute_t *attributes = property_copyAttributeList(property, &count);
+    
+    char *selector = malloc(30);
+    for (unsigned i = 0; i < count; i++) {
+        objc_property_attribute_t att = attributes[i];
+        if (strcmp(att.name, "S")) {
+            strcpy(selector, att.value);
+        }
+    }
+    
+    if (strlen(selector) > 0) {
+        char c = toupper(propertyName[0]);
+        strcpy(selector, "set");
+        strcat(selector, &c);
+        strcat(selector, propertyName + 1);
+    }
+    
+    free(attributes);
+    
+    return sel_getUid(selector);
+}
 
 static SEL IIFish_Property_GetSelector(Class cls, const char *propertyName) {
     objc_property_t property = class_getProperty(cls, propertyName);
@@ -617,25 +646,22 @@ static SEL IIFish_Property_GetSelector(Class cls, const char *propertyName) {
     unsigned int count;
     objc_property_attribute_t *attributes = property_copyAttributeList(property, &count);
     
-    char *selector = NULL;
+    char *selector;
     for (unsigned i = 0; i < count; i++) {
         objc_property_attribute_t att = attributes[i];
-        if (strcmp(att.name, "S")) {
-            strcpy(selector, att.name);
+        if (strcmp(att.name, "G")) {
+            strcpy(selector, att.value);
         }
     }
     
     if (!selector) {
-        char c = toupper(propertyName[0]);
-        strcpy(selector, "set");
-        strcat(selector, &c);
-        strcat(selector, propertyName + 1);
+        strcpy(selector, propertyName);
     }
     
-    free(property);
     free(attributes);
-    return NSSelectorFromString([NSString stringWithCString:selector encoding:NSUTF8StringEncoding]);
+    return sel_getUid(selector);
 }
+
 
 //typedef struct {
 //    char * getSelector;
@@ -686,7 +712,7 @@ static SEL IIFish_Property_GetSelector(Class cls, const char *propertyName) {
         
         // property
         if (fish.flag & IIFish_Property) {
-            SEL selector = IIFish_Property_GetSelector(fish.object,[fish.property UTF8String]);
+            SEL selector = IIFish_Property_SetSelector([fish.object class],[fish.property UTF8String]);
             if (!selector) continue;
             fish.selector = selector;
             IIFish_Hook_Class(fish.object);
@@ -708,8 +734,12 @@ static SEL IIFish_Property_GetSelector(Class cls, const char *propertyName) {
         }
         
         NSString *key = fish.flag & IIFish_IsBlock ? IIFishBlockObserverKey : NSStringFromSelector(fish.selector);
+        NSString *info =  fish.flag & IIFish_Property ? fish.property : @"";
 
         IIFishMethodAsset *asset = IIFish_Class_Get_Asset(fish.object);
+        [asset methodAsset:^(NSMutableDictionary *methodAsset) {
+            [methodAsset addEntriesFromDictionary:@{key : info}];
+        }];
         [asset observerFishesWithKey:key asset:^(NSMutableSet<IIFish *> *observerFishes) {
             for (IIFish *f in fishes) {
                 if (f.flag & IIFish_Post ||  f == fish) continue;

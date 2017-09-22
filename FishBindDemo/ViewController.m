@@ -27,13 +27,18 @@
 //                             [IIFish fish:t1 key:@selector(setName:) callBack:nil],
 //                             [IIFish fish:t2 key:@selector(setTabs:) callBack:nil],
 //                             ]];
+    
+    [IIFishBind bindFishes:@[
+                             [IIFish post:t1 property:@"name"],
+                             [IIFish observer:t2 property:@"tabs"]
+                             ]];
 
     NSLog(@"======");
     t1.name = @"hahahaha";
     NSLog(@"=====%@",t2.tabs);
     
-    t2.tabs = @"aasdasdasds";
-    NSLog(@"======%@",t1.name);
+//    t2.tabs = @"aasdasdasds";
+//    NSLog(@"======%@",t1.name);
     
 }
 
