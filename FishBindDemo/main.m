@@ -24,21 +24,13 @@ int main(int argc, const char * argv[]) {
                                  ]];
         
         objectA.name = @"dead fish";
+        // put ===dead fish ===dead fish===
         NSLog(@"===%@ ===%@===",objectA.name, objectB.nameData);
+        
+        
         objectB.nameData = @"name data";
+        //put ===name data ===name data===
         NSLog(@"===%@ ===%@===",objectA.name, objectB.nameData);
-        
-//        [IIFishBind bindFishes:@[
-//                                 [IIFish post:objectA selector:@selector(loadDataWithName:age:)],
-//                                 [IIFish observer:objectB
-//                                         callBack:^(id object, NSString *key, id resule, NSArray *args, id deadFish) {
-//                                             
-//                                             
-//                                         }]
-//                                 ]];
-        
-        
-        
         
     }
     return 0;

@@ -13,7 +13,6 @@
 
 //todo
 //type coding
-//pro sup
 //kvo
 
 #pragma mark-
@@ -28,9 +27,13 @@ typedef NS_OPTIONS(NSInteger, IIFishFlage) {
 };
 
 
+@implementation IIFishCallBack
+@end
+
+
 @implementation IIFish
 
-+ (instancetype)fish:(id)object property:(NSString*)property selector:(SEL)selector callBack:(IIFishMindine)callBack flag:(NSInteger)flag {
++ (instancetype)fish:(id)object property:(NSString*)property selector:(SEL)selector callBack:(IIFishCallBackBlock)callBack flag:(NSInteger)flag {
     IIFish *fish = [[self alloc] init];
     fish.object = object;
     fish.selector = selector;
@@ -41,7 +44,7 @@ typedef NS_OPTIONS(NSInteger, IIFishFlage) {
 }
 
 
-+ (instancetype)both:(id)object selector:(SEL)selector callBack:(IIFishMindine)callBack {
++ (instancetype)both:(id)object selector:(SEL)selector callBack:(IIFishCallBackBlock)callBack {
     return [self  fish:object property:nil selector:selector callBack:callBack flag:IIFish_Seletor];
 }
 + (instancetype)both:(id)object property:(NSString*)property {
@@ -58,19 +61,14 @@ typedef NS_OPTIONS(NSInteger, IIFishFlage) {
 + (instancetype)post:(id)object selector:(SEL)selector {
     return [self fish:object property:nil selector:selector callBack:nil flag:IIFish_Post | IIFish_Seletor];
 }
-
 + (instancetype)observer:(id)object property:(NSString *)property {
     return [self fish:object property:property selector:nil callBack:nil flag:IIFish_Observer | IIFish_Property];
 }
-+ (instancetype)observer:(id)object callBack:(IIFishMindine)callBack {
++ (instancetype)observer:(id)object callBack:(IIFishCallBackBlock)callBack {
     return [self fish:object property:nil selector:nil callBack:callBack flag:IIFish_Observer | IIFish_Seletor];
 }
 
 @end
-
-
-static NSInvocation * IIFish_Encoding(NSMethodSignature *methodSignature, NSInteger firstArgIndex, va_list list);
-
 
 #pragma mark-
 #pragma mark- lock
@@ -117,17 +115,302 @@ static void IIFish_ClassTable_AddClass(Class cls) {
         [classTable addObject:cls];
     });
 }
+#pragma mark- Type Encodings
+// https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
 
-#pragma mark-
-#pragma mark- GlobalTable
-
-static NSMapTable* IIFish_GlobalTable() {
-    static NSMapTable *globalTable;
-    if (!globalTable) {
-        globalTable = [NSMapTable mapTableWithKeyOptions:NSPointerFunctionsWeakMemory valueOptions:NSPointerFunctionsWeakMemory];
+static void IIFish_TypeEncoding_Set_MethodArgs(NSInvocation *invocation, NSInteger firstArgIndex, va_list list) {
+    
+    for (NSInteger i = firstArgIndex; i < [invocation.methodSignature numberOfArguments]; i ++) {
+        const char *argType = [invocation.methodSignature getArgumentTypeAtIndex:i];
+        
+        switch (argType[0]) {
+            case 'c' : {
+                char arg = va_arg(list, int);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 'i': {
+                int arg = va_arg(list, int);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 's': {
+                short arg = va_arg(list, int);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 'l': {
+                long arg = va_arg(list, long);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 'q': {
+                long long arg = va_arg(list, long long);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 'C': {
+                unsigned char arg = va_arg(list, int);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 'I': {
+                unsigned int arg = va_arg(list, unsigned int);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 'S': {
+                unsigned short arg = va_arg(list, int);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 'L': {
+                unsigned long arg = va_arg(list, unsigned long);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 'Q': {
+                unsigned long long arg = va_arg(list, unsigned long long);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 'f': {
+                float arg = va_arg(list, double);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 'd': {
+                double arg = va_arg(list, double);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case 'B': {
+                BOOL arg = va_arg(list, int);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case '*': {
+                char *arg = va_arg(list, char *);
+                [invocation setArgument:arg atIndex:i];
+            } break;
+            case '@': {
+                id arg = va_arg(list, id);
+                [invocation setArgument:(__bridge void *)arg atIndex:i];
+            } break;
+            case '#': {
+                Class arg = va_arg(list, Class);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+            case ':': {
+                SEL arg = va_arg(list, SEL);
+                [invocation setArgument:(void *)&arg atIndex:i];
+            } break;
+        }
     }
-    return globalTable;
 }
+
+static void *IIFish_TypeEncoding_Get_ReturnValue(const char *returnValueTypeCodeing, void *returnValue) {
+    
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wint-conversion"
+    
+    switch (returnValueTypeCodeing[0]) {
+        case 'c' : {
+            char *arg = returnValue;
+            return *arg;
+        }
+        case 'i': {
+            int *arg = returnValue;
+            return *arg;
+        }
+    }
+    
+#pragma clang diagnostic pop
+    
+    return nil;
+}
+
+static id IIFish_TypeEncoding_Get_ReturnValueInBox(NSInvocation *invocation) {
+    const char *argType = [invocation.methodSignature methodReturnType];
+    id argBox;
+    switch (argType[0]) {
+        case 'c' : {
+            char arg;
+            [invocation setReturnValue:&arg];
+            argBox = [NSNumber numberWithChar:arg];
+        } break;
+        case 'i': {
+            int arg;
+            [invocation setReturnValue:&arg];
+            argBox = [NSNumber numberWithInt:arg];
+        } break;
+        case 's': {
+            short arg;
+            [invocation setReturnValue:&arg];
+            argBox = [NSNumber numberWithShort:arg];
+        } break;
+        case 'l': {
+            long arg;
+           [invocation setReturnValue:&arg];
+            argBox = [NSNumber numberWithLong:arg];
+        } break;
+        case 'q': {
+            long long arg;
+            [invocation setReturnValue:&arg];
+            argBox = [NSNumber numberWithLongLong:arg];
+        } break;
+        case 'C': {
+            unsigned char arg;
+            [invocation setReturnValue:&arg];
+            argBox = [NSNumber numberWithUnsignedChar:arg];
+        } break;
+        case 'I': {
+            unsigned int arg;
+            [invocation setReturnValue:&arg];
+            argBox = [NSNumber numberWithUnsignedInteger:arg];
+        } break;
+        case 'S': {
+            unsigned short arg;
+            [invocation setReturnValue:&arg];
+            argBox = [NSNumber numberWithUnsignedShort:arg];
+        } break;
+        case 'L': {
+            unsigned long arg;
+            [invocation setReturnValue:&arg];
+            argBox = [NSNumber numberWithUnsignedLong:arg];
+        } break;
+        case 'Q': {
+            unsigned long long arg;
+           [invocation setReturnValue:&arg];
+            argBox = [NSNumber numberWithUnsignedLongLong:arg];
+        } break;
+        case 'f': {
+            float arg;
+            [invocation setReturnValue:&arg];
+            argBox = [NSNumber numberWithFloat:arg];
+        } break;
+        case 'd': {
+            double arg;
+            [invocation setReturnValue:&arg];
+            argBox = [NSNumber numberWithDouble:arg];
+        } break;
+        case 'B': {
+            BOOL arg;
+            [invocation setReturnValue:&arg];
+            argBox = [NSNumber numberWithBool:arg];
+        } break;
+        case '*': {
+            char *arg;
+            [invocation setReturnValue:&arg];
+            argBox = [[NSString alloc] initWithUTF8String:arg];
+        } break;
+        case '@': {
+            id arg;
+            [invocation setReturnValue:&arg];
+            argBox = arg;
+        } break;
+        case '#': {
+            Class arg;
+            [invocation setReturnValue:&arg];
+            argBox = NSStringFromClass(arg);
+        } break;
+        case ':': {
+            SEL arg;
+            [invocation setReturnValue:&arg];
+            argBox = NSStringFromSelector(arg);
+        } break;
+    }
+
+    return argBox;
+}
+
+static NSArray *IIFish_TypeEncoding_Get_MethodArgs(NSInvocation *invocation) {
+    
+    NSMutableArray *args = [NSMutableArray new];
+    for (NSInteger i = 2; i < [invocation.methodSignature numberOfArguments]; i ++) {
+        const char *argType = [invocation.methodSignature getArgumentTypeAtIndex:i];
+        id argBox;
+        switch (argType[0]) {
+            case 'c' : {
+                char arg;
+                [invocation getArgument:&arg atIndex:i];
+                argBox = [NSNumber numberWithChar:arg];
+            } break;
+            case 'i': {
+                int arg;
+                [invocation getArgument:&arg atIndex:i];
+                argBox = [NSNumber numberWithInt:arg];
+            } break;
+            case 's': {
+                short arg;
+                [invocation getArgument:&arg atIndex:i];
+                argBox = [NSNumber numberWithShort:arg];
+            } break;
+            case 'l': {
+                long arg;
+                [invocation getArgument:&arg atIndex:i];
+                argBox = [NSNumber numberWithLong:arg];
+            } break;
+            case 'q': {
+                long long arg;
+                [invocation getArgument:&arg atIndex:i];
+                argBox = [NSNumber numberWithLongLong:arg];
+            } break;
+            case 'C': {
+                unsigned char arg;
+                [invocation getArgument:&arg atIndex:i];
+                argBox = [NSNumber numberWithUnsignedChar:arg];
+            } break;
+            case 'I': {
+                unsigned int arg;
+                [invocation getArgument:&arg atIndex:i];
+                argBox = [NSNumber numberWithUnsignedInteger:arg];
+            } break;
+            case 'S': {
+                unsigned short arg;
+                [invocation getArgument:&arg atIndex:i];
+                argBox = [NSNumber numberWithUnsignedShort:arg];
+            } break;
+            case 'L': {
+                unsigned long arg;
+                [invocation getArgument:&arg atIndex:i];
+                argBox = [NSNumber numberWithUnsignedLong:arg];
+            } break;
+            case 'Q': {
+                unsigned long long arg;
+                [invocation getArgument:&arg atIndex:i];
+                argBox = [NSNumber numberWithUnsignedLongLong:arg];
+            } break;
+            case 'f': {
+                float arg;
+                [invocation getArgument:&arg atIndex:i];
+                argBox = [NSNumber numberWithFloat:arg];
+            } break;
+            case 'd': {
+                double arg;
+                [invocation getArgument:&arg atIndex:i];
+                argBox = [NSNumber numberWithDouble:arg];
+            } break;
+            case 'B': {
+                BOOL arg;
+                [invocation getArgument:&arg atIndex:i];
+                argBox = [NSNumber numberWithBool:arg];
+            } break;
+            case '*': {
+                char *arg;
+                [invocation getArgument:&arg atIndex:i];
+                argBox = [[NSString alloc] initWithUTF8String:arg];
+            } break;
+            case '@': {
+                id arg;
+                [invocation getArgument:&arg atIndex:i];
+                argBox = arg;
+            } break;
+            case '#': {
+                Class arg;
+                [invocation getArgument:&arg atIndex:i];
+                argBox = NSStringFromClass(arg);
+            } break;
+            case ':': {
+                SEL arg;
+                [invocation getArgument:&arg atIndex:i];
+                argBox = NSStringFromSelector(arg);
+            } break;
+        }
+        
+        [args addObject:argBox];
+    }
+    
+    return args;
+}
+
 
 #pragma mark-
 #pragma mark- Block Hook
@@ -191,7 +474,7 @@ typedef void (*IIFishBlockFunc) (void*, ...);
 
 static BOOL IIFish_Block_TypeCheck(id object);
 static id IIFish_Block_Get_TempBlock(IIFishBlock block);
-static void * IIFish_Encoding_ReruenValue(const char *returnValueTypeCodeing, void *returnValue);
+
 
 static  NSString const *IIFishBlockObserverKey = @"IIFishBlockObserverKey";
 
@@ -201,7 +484,8 @@ void* IIFishBlockFuncPtr(IIFishBlock block, ...) {
     NSMethodSignature *ms = [NSMethodSignature signatureWithObjCTypes:descriptor_3->signature];
     va_list ap;
     va_start(ap, block);
-    NSInvocation *invo = IIFish_Encoding(ms, 1, ap);
+    NSInvocation *invo = [NSInvocation invocationWithMethodSignature:ms];
+    IIFish_TypeEncoding_Set_MethodArgs(invo,1,ap);
     va_end(ap);
     
     id tempBlock = IIFish_Block_Get_TempBlock(block);
@@ -215,7 +499,7 @@ void* IIFishBlockFuncPtr(IIFishBlock block, ...) {
     [invo invokeWithTarget:tempBlock];
     [invo getReturnValue:returnValue];
     
-    return IIFish_Encoding_ReruenValue([ms methodReturnType], returnValue);
+    return IIFish_TypeEncoding_Get_ReturnValue([ms methodReturnType], returnValue);
 }
 
 static id IIFish_Block_Get_TempBlock(IIFishBlock block) {
@@ -300,112 +584,6 @@ static void IIFish_Hook_Block(id obj) {
     }
 }
 
-#pragma mark- Type Encodings
-// https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
-
-static NSInvocation * IIFish_Encoding(NSMethodSignature *methodSignature, NSInteger firstArgIndex, va_list list) {
-    
-    NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:methodSignature];
-    
-    for (NSInteger i = firstArgIndex; i < [methodSignature numberOfArguments]; i ++) {
-        const char *argType = [methodSignature getArgumentTypeAtIndex:i];
-        
-        switch (argType[0]) {
-            case 'c' : {
-                char arg = va_arg(list, int);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'i': {
-                int arg = va_arg(list, int);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 's': {
-                short arg = va_arg(list, int);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'l': {
-                long arg = va_arg(list, long);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'q': {
-                long long arg = va_arg(list, long long);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'C': {
-                unsigned char arg = va_arg(list, int);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'I': {
-                unsigned int arg = va_arg(list, unsigned int);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'S': {
-                unsigned short arg = va_arg(list, int);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'L': {
-                unsigned long arg = va_arg(list, unsigned long);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'Q': {
-                unsigned long long arg = va_arg(list, unsigned long long);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'f': {
-                float arg = va_arg(list, double);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'd': {
-                double arg = va_arg(list, double);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'B': {
-                BOOL arg = va_arg(list, int);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case '*': {
-                char *arg = va_arg(list, char *);
-                [invocation setArgument:arg atIndex:i];
-            } break;
-            case '@': {
-                id arg = va_arg(list, id);
-                [invocation setArgument:(__bridge void *)arg atIndex:i];
-            } break;
-            case '#': {
-                Class arg = va_arg(list, Class);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case ':': {
-                SEL arg = va_arg(list, SEL);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-        }
-    }
-    
-    return invocation;
-}
-
-static void* IIFish_Encoding_ReruenValue(const char *returnValueTypeCodeing, void *returnValue) {
-    
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wint-conversion"
-    
-    switch (returnValueTypeCodeing[0]) {
-        case 'c' : {
-            char *arg = returnValue;
-            return *arg;
-        }
-        case 'i': {
-            int *arg = returnValue;
-            return *arg;
-        }
-    }
-    
-#pragma clang diagnostic pop
-    
-    return nil;
-}
-
 #pragma mark- Method Hook
 #pragma mark-
 
@@ -467,8 +645,6 @@ static SEL IIFish_Property_SetSelector(Class cls, const char *propertyName);
 
 @end
 
-#pragma mark-
-#pragma mark- observer Fish info
 
 
 #pragma mark-
@@ -515,7 +691,6 @@ static IIFishMethodAsset *IIFish_Class_Get_Asset(id object) {
 
 
 void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
-    __strong id strongSelf = self;
     Class cls = object_getClass(self);
     SEL fakeSel = anInvocation.selector;
     NSString *orgSelString = [NSString stringWithFormat:@"%@%@", IIFish_Prefix,NSStringFromSelector(fakeSel)];
@@ -523,7 +698,6 @@ void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
     [anInvocation invoke];
     
 
-    
     IIFishMethodAsset *asseet = IIFish_Class_Get_Asset(self);
     __block NSArray *observers;
     __block NSString *info;
@@ -536,33 +710,39 @@ void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
     
     //property
     if (info.length > 0) {
-        
         SEL postGetSel = IIFish_Property_GetSelector([self class], [info UTF8String]);
         
-
         Method m = class_getInstanceMethod(cls, postGetSel);
         NSMethodSignature *ms  = [NSMethodSignature signatureWithObjCTypes:method_getTypeEncoding(m)];
         NSInvocation *invo = [NSInvocation invocationWithMethodSignature:ms];
-
+        
         invo.selector = postGetSel;
         [invo invokeWithTarget:[self iiDeadFish]];
-        NSString *propertyValue;
-        [invo getReturnValue:&propertyValue];
+        void *propertyValue = malloc([ms methodReturnLength]);
+        
+        [invo getReturnValue:propertyValue];
         
         for (IIFish *fish in observers) {
             SEL observerSetSel = IIFish_Property_SetSelector([fish.object class], [fish.property UTF8String]);
             NSMethodSignature *ms = [fish.object methodSignatureForSelector:observerSetSel];
             NSInvocation *invo = [NSInvocation invocationWithMethodSignature:ms];
             invo.selector = observerSetSel;
-            [invo setArgument:&propertyValue atIndex:2];
+            [invo setArgument:propertyValue atIndex:2];
             [invo invokeWithTarget:[fish.object iiDeadFish]];
+            free(propertyValue);
         }
-        
     } else {
-        
+        IIFishCallBack *callBack = [[IIFishCallBack alloc] init];
+        callBack.tager = self;
+        callBack.selector = NSStringFromSelector(anInvocation.selector);
+        callBack.args = IIFish_TypeEncoding_Get_MethodArgs(anInvocation);
+        callBack.resule = IIFish_TypeEncoding_Get_ReturnValueInBox(anInvocation);
+        for (IIFish *fish in observers) {
+            if (fish.callBack) {
+                fish.callBack(callBack, [fish.object iiDeadFish]);
+            }
+        }
     }
-    
-    
     
 }
 
@@ -708,12 +888,10 @@ static SEL IIFish_Property_GetSelector(Class cls, const char *propertyName) {
         // property
         if (fish.flag & IIFish_Property) {
             SEL selector = IIFish_Property_SetSelector([fish.object class],[fish.property UTF8String]);
-            SEL gS = IIFish_Property_GetSelector([fish.object class],[fish.property UTF8String]);
             if (!selector) continue;
             fish.selector = selector;
             IIFish_Hook_Class(fish.object);
             IIFish_Hook_Method(fish.object, selector);
-            //IIFish_Hook_Method(fish.object, gS);
         }
         
         //method
@@ -750,52 +928,6 @@ static SEL IIFish_Property_GetSelector(Class cls, const char *propertyName) {
     
 }
 
-
-
-
-
-#pragma mark-
-#pragma mark- test
-
-- (void)testMethod {
-    NSLog(@"asdasdas");
-}
-
-+ (void (^)(void))test:(id)obj {
-    return ^() {
-        NSLog(@"bbTest");
-    };
-}
-
-+ (void)load {
-    
-    //===== block test ===
-//    int (^testBlock)(char c, id obj)  = ^(char c, id obj) {
-//        return 30;
-//    };
-//    IIFish_Hook_Block(testBlock);
-//
-//    int i = testBlock('c',[NSArray new]);
-//
-//    NSLog(@"block hook====== i = %@",@(i));
-    
-    //=====class test ======
-    
-//    IIFishBind *fish = [[IIFishBind alloc] init];
-//    IIFishBind *fish1 = [[IIFishBind alloc] init];
-//
-//    IIFish_Hook_Class(fish);
-//    IIFish_Hook_Method(fish, @selector(testMethod));
-//
-//    [fish testMethod]; // hook
-//    [fish.iiDeadFish testMethod]; // not hook
-//    [fish1 testMethod]; // not hook
-//
-//    NSLog(@"asdasdsa");
-    
-    //=======  bind test ====
-    
-}
 @end
 
 
