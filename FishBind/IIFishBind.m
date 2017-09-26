@@ -12,11 +12,9 @@
 #import <objc/message.h>
 
 //todo
-//type coding
 //kvo
 
-#pragma mark-
-#pragma mark- base model
+static NSString const* IIFish_Prefix = @"IIFish_";
 
 typedef NS_OPTIONS(NSInteger, IIFishFlage) {
     IIFish_IsBlock = (1 << 2),
@@ -30,6 +28,8 @@ typedef NS_OPTIONS(NSInteger, IIFishFlage) {
 @implementation IIFishCallBack
 @end
 
+#pragma mark-
+#pragma mark- IIFish
 
 @implementation IIFish
 
@@ -69,6 +69,86 @@ typedef NS_OPTIONS(NSInteger, IIFishFlage) {
 }
 
 @end
+
+
+#pragma mark-
+#pragma mark- Dead Fish
+
+@interface IIDeadFish : NSProxy
+@property (nonatomic, weak) id orgObject;
+@end
+
+@implementation IIDeadFish
+- (nullable NSMethodSignature *)methodSignatureForSelector:(SEL)sel {
+    return [_orgObject methodSignatureForSelector:sel];
+}
+
+- (void)forwardInvocation:(NSInvocation *)invocation {
+    invocation.target = _orgObject;
+    
+    SEL orgSel =NSSelectorFromString( [NSString stringWithFormat:@"%@%@",IIFish_Prefix,NSStringFromSelector(invocation.selector)]);
+    Method method = class_getInstanceMethod(object_getClass(_orgObject), orgSel);
+    if (method) {
+        invocation.selector = orgSel;
+    }
+    
+    [invocation invoke];
+}
+@end
+
+
+@interface NSObject(IIFishBind_DeadFish)
+@property (nonatomic, readonly) id iiDeadFish;
+@end
+
+@implementation NSObject (IIFishBind_DeadFish)
+
+- (id)iiDeadFish {
+    Class cls = object_getClass(self);
+    if (![NSStringFromClass(cls) hasPrefix:[IIFish_Prefix copy]]) {
+        return self;
+    }
+    IIDeadFish *deadFish = objc_getAssociatedObject(self, _cmd);
+    if (!deadFish) {
+        deadFish = [IIDeadFish alloc];
+        deadFish.orgObject= self;
+        objc_setAssociatedObject(self, _cmd, deadFish, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+    return deadFish;
+}
+@end
+
+#pragma mark-
+#pragma mark- ObserverAsset
+
+@interface IIObserverAsset : NSObject
+
+// key : orgSelector value : info
+@property (nonatomic, strong) NSMutableDictionary <NSString *, NSString*>*methodAsset;
+//key : orgSelector value : observer
+@property (nonatomic, strong) NSMutableDictionary <NSString *, NSSet<IIFish *>*>*observerAsset;
+
+- (void)asset:(void (^)(NSMutableDictionary <NSString *, NSString*> * methodAsset, NSMutableDictionary <NSString *, NSSet<IIFish *>*>*observerAsset))asset;
+
+@end
+
+@implementation IIFishMethodAsset
+
+- (id)init {
+    if (self  = [super init]) {
+        _methodAsset = [NSMutableDictionary new];
+        _observerAsset = [NSMutableDictionary new];
+    }
+    return self;
+}
+
+- (void)asset:(void (^)(NSMutableDictionary <NSString *, NSString*> * methodAsset, NSMutableDictionary <NSString *, NSSet<IIFish *>*>*observerAsset))asset {
+    IIFish_Lock(^{
+        asset(_methodAsset, _observerAsset);
+    });
+}
+@end
+
 
 #pragma mark-
 #pragma mark- lock
@@ -475,7 +555,6 @@ typedef void (*IIFishBlockFunc) (void*, ...);
 static BOOL IIFish_Block_TypeCheck(id object);
 static id IIFish_Block_Get_TempBlock(IIFishBlock block);
 
-
 static  NSString const *IIFishBlockObserverKey = @"IIFishBlockObserverKey";
 
 void* IIFishBlockFuncPtr(IIFishBlock block, ...) {
@@ -498,6 +577,7 @@ void* IIFishBlockFuncPtr(IIFishBlock block, ...) {
     void *returnValue = malloc([ms methodReturnLength]);
     [invo invokeWithTarget:tempBlock];
     [invo getReturnValue:returnValue];
+    
     
     return IIFish_TypeEncoding_Get_ReturnValue([ms methodReturnType], returnValue);
 }
@@ -577,112 +657,26 @@ static IIFishBlock IIFish_Block_DeepCopy(IIFishBlock block) {
 
 static void IIFish_Hook_Block(id obj) {
     IIFishBlock block = (__bridge IIFishBlock)(obj);
-    
     if (!IIFish_Block_Get_TempBlock(block)) {
         IIFish_Block_DeepCopy(block);
         block->invoke = (IIFishBlockFunc)IIFishBlockFuncPtr;
     }
 }
 
+
 #pragma mark- Method Hook
 #pragma mark-
 
-static NSString const* IIFish_Prefix = @"IIFish_";
+
 
 static SEL IIFish_Property_GetSelector(Class cls, const char *propertyName);
 static SEL IIFish_Property_SetSelector(Class cls, const char *propertyName);
 
 
-@interface IIDeadFish : NSProxy
-@property (nonatomic, weak) id orgObject;
-@end
-
-@implementation IIDeadFish
-- (nullable NSMethodSignature *)methodSignatureForSelector:(SEL)sel {
-    return [_orgObject methodSignatureForSelector:sel];
-}
-
-- (void)forwardInvocation:(NSInvocation *)invocation {
-    invocation.target = _orgObject;
-    
-    SEL orgSel =NSSelectorFromString( [NSString stringWithFormat:@"%@%@",IIFish_Prefix,NSStringFromSelector(invocation.selector)]);
-    Method method = class_getInstanceMethod(object_getClass(_orgObject), orgSel);
-    if (method) {
-        invocation.selector = orgSel;
-    }
-    
-    [invocation invoke];
-}
-@end
-
-
-#pragma mark-
-#pragma mark- deadfish
-
-@interface NSObject(IIFishBind_DeadFish)
-@property (nonatomic, strong) id iiDeadFish;
-@end
-
-@implementation NSObject (IIFishBind_DeadFish)
-
-- (id)iiDeadFish {
-    Class cls = object_getClass(self);
-    if (![NSStringFromClass(cls) hasPrefix:[IIFish_Prefix copy]]) {
-        return self;
-    }
-    IIDeadFish *deadFish = objc_getAssociatedObject(self, _cmd);
-    if (!deadFish) {
-        deadFish = [IIDeadFish alloc];
-        deadFish.orgObject= self;
-        self.iiDeadFish = deadFish;
-    }
-    return deadFish;
-}
-
-- (void)setIiDeadFish:(id)iiDeadFish {
-    objc_setAssociatedObject(self, @selector(iiDeadFish), iiDeadFish, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-
-@end
-
-
-
-#pragma mark-
-#pragma mark- methodAsset
-
-@interface IIFishMethodAsset : NSObject
-
-// key : orgSelector value : info
-@property (nonatomic, strong) NSMutableDictionary <NSString *, NSString*>*methodAsset;
-//key : orgSelector value : observer
-@property (nonatomic, strong) NSMutableDictionary <NSString *, NSSet<IIFish *>*>*observerAsset;
-
-- (void)asset:(void (^)(NSMutableDictionary <NSString *, NSString*> * methodAsset, NSMutableDictionary <NSString *, NSSet<IIFish *>*>*observerAsset))asset;
-
-@end
-
-@implementation IIFishMethodAsset
-
-- (id)init {
-    if (self  = [super init]) {
-        _methodAsset = [NSMutableDictionary new];
-        _observerAsset = [NSMutableDictionary new];
-    }
-    return self;
-}
-
-- (void)asset:(void (^)(NSMutableDictionary <NSString *, NSString*> * methodAsset, NSMutableDictionary <NSString *, NSSet<IIFish *>*>*observerAsset))asset {
-    IIFish_Lock(^{
-        asset(_methodAsset, _observerAsset);
-    });
-}
-@end
-
-
-static IIFishMethodAsset *IIFish_Class_Get_Asset(id object) {
-    IIFishMethodAsset *asset = objc_getAssociatedObject(object, "IIFish_Class_Get_Asset");
+static IIObserverAsset *IIFish_Class_Get_Asset(id object) {
+    IIObserverAsset *asset = objc_getAssociatedObject(object, "IIFish_Class_Get_Asset");
     if (!asset) {
-        asset = [[IIFishMethodAsset alloc] init];
+        asset = [[IIObserverAsset alloc] init];
         objc_setAssociatedObject(object, "IIFish_Class_Get_Asset", asset, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
     return asset;
@@ -698,7 +692,7 @@ void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
     [anInvocation invoke];
     
 
-    IIFishMethodAsset *asseet = IIFish_Class_Get_Asset(self);
+    IIObserverAsset *asseet = IIFish_Class_Get_Asset(self);
     __block NSArray *observers;
     __block NSString *info;
     NSString *key = NSStringFromSelector(fakeSel);
@@ -908,7 +902,7 @@ static SEL IIFish_Property_GetSelector(Class cls, const char *propertyName) {
         NSString *key = fish.flag & IIFish_IsBlock ? IIFishBlockObserverKey : NSStringFromSelector(fish.selector);
         NSString *info =  fish.flag & IIFish_Property ? fish.property : @"";
 
-        IIFishMethodAsset *asset = IIFish_Class_Get_Asset(fish.object);
+        IIObserverAsset *asset = IIFish_Class_Get_Asset(fish.object);
         
         [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSSet<IIFish *> *> *observerAsset) {
             [methodAsset addEntriesFromDictionary:@{key : info}];
