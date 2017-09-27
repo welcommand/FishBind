@@ -13,6 +13,11 @@
 
 //todo
 //kvo
+// block
+// lock
+// method info
+// remove
+// type codeing
 
 static NSString const* IIFish_Prefix = @"IIFish_";
 
@@ -127,23 +132,25 @@ typedef NS_OPTIONS(NSInteger, IIFishFlage) {
 @property (nonatomic, strong) NSMutableDictionary <NSString *, NSString*>*methodAsset;
 //key : orgSelector value : observer
 @property (nonatomic, strong) NSMutableDictionary <NSString *, NSSet<IIFish *>*>*observerAsset;
+@property (nonatomic, strong) dispatch_queue_t rwQueue;
 
 - (void)asset:(void (^)(NSMutableDictionary <NSString *, NSString*> * methodAsset, NSMutableDictionary <NSString *, NSSet<IIFish *>*>*observerAsset))asset;
 
 @end
 
-@implementation IIFishMethodAsset
+@implementation IIObserverAsset
 
 - (id)init {
     if (self  = [super init]) {
         _methodAsset = [NSMutableDictionary new];
         _observerAsset = [NSMutableDictionary new];
+        _rwQueue = dispatch_queue_create("com.IIFishAsset.FishBind", DISPATCH_QUEUE_CONCURRENT);
     }
     return self;
 }
 
 - (void)asset:(void (^)(NSMutableDictionary <NSString *, NSString*> * methodAsset, NSMutableDictionary <NSString *, NSSet<IIFish *>*>*observerAsset))asset {
-    IIFish_Lock(^{
+    dispatch_barrier_sync(_rwQueue, ^{
         asset(_methodAsset, _observerAsset);
     });
 }
@@ -666,8 +673,6 @@ static void IIFish_Hook_Block(id obj) {
 
 #pragma mark- Method Hook
 #pragma mark-
-
-
 
 static SEL IIFish_Property_GetSelector(Class cls, const char *propertyName);
 static SEL IIFish_Property_SetSelector(Class cls, const char *propertyName);
