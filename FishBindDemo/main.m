@@ -51,6 +51,23 @@ int main(int argc, const char * argv[]) {
         NSLog(@"====%@",objectA1.name);
         //put ====object1
         
+        
+        NSInteger (^testBlock)(NSInteger i, NSInteger j) = ^(NSInteger i, NSInteger j) {
+            return i + j;
+        };
+        
+        [IIFishBind bindFishes:@[
+                                 [IIFish postBlock:testBlock],
+                                 [IIFish observer:objectA1
+                                         callBack:^(IIFishCallBack *callBack, id deadFish) {
+                                             
+                                             NSLog(@"test block called  :   %@ + %@ = %@",callBack.args[0], callBack.args[1], callBack.resule);
+                                             
+                                         }]
+                                 ]];
+        
+        testBlock(3,4);
+        
     }
     return 0;
 }
