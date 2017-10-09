@@ -12,6 +12,16 @@
 #import "IITestObjectA.h"
 #import "IITestObjectB.h"
 
+struct CGTest {
+    CGPoint p;
+    CGFloat f;
+    NSInteger i;
+    char list[30];
+};
+typedef struct CGTest CGTest;
+//{CGTest={CGPoint=dd}dq[30c]}
+
+
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
         
@@ -52,7 +62,8 @@ int main(int argc, const char * argv[]) {
         //put ====object1
         
         
-        NSInteger (^testBlock)(NSInteger i, NSInteger j) = ^(NSInteger i, NSInteger j) {
+        NSInteger (^testBlock)(NSInteger i, NSInteger j, CGTest p) = ^(NSInteger i, NSInteger j, CGTest p) {
+            NSLog(@"asdasdsa");
             return i + j;
         };
         
@@ -66,7 +77,9 @@ int main(int argc, const char * argv[]) {
                                          }]
                                  ]];
         
-        testBlock(3,4);
+        CGTest point  = (CGTest){100,2.2,3,3};
+        
+        testBlock(3,4,point);
         
     }
     return 0;
