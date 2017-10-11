@@ -12,6 +12,17 @@
 #import "IITestObjectA.h"
 #import "IITestObjectB.h"
 
+struct CGTest {
+    CGPoint p;
+    CGFloat f;
+    NSInteger i;
+
+    CGPoint *pp;
+};
+typedef struct CGTest CGTest;
+//{CGTest={CGPoint=dd}dq[30c]}
+
+
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
         
@@ -51,9 +62,16 @@ int main(int argc, const char * argv[]) {
         NSLog(@"====%@",objectA1.name);
         //put ====object1
         
+<<<<<<< HEAD
         NSInteger (^testBlock)(NSInteger i, NSInteger j, CGPoint point) = ^(NSInteger i, NSInteger j, CGPoint p) {
             NSInteger sum = p.x + p.y;
             return sum;
+=======
+        
+        NSInteger (^testBlock)(NSInteger i, NSInteger j, CGTest p) = ^(NSInteger i, NSInteger j, CGTest p) {
+            NSLog(@"asdasdsa");
+            return i + j;
+>>>>>>> origin/master
         };
         
         [IIFishBind bindFishes:@[
@@ -65,6 +83,7 @@ int main(int argc, const char * argv[]) {
                                          }]
                                  ]];
         
+<<<<<<< HEAD
         
         testBlock(3,4,(CGPoint){1,1});
         
@@ -82,6 +101,11 @@ int main(int argc, const char * argv[]) {
                                  ]];
         
         testMallocBlock();
+=======
+        CGTest point  = (CGTest){100,2.2};
+        
+        testBlock(3,4,point);
+>>>>>>> origin/master
         
     }
     return 0;
