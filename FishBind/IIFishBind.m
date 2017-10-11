@@ -325,12 +325,19 @@ static void IIFish_TypeEncoding_Set_MethodArgs(NSInvocation *invocation, NSInteg
             c[i] = ((char *)&f2)[i];
         }
         
+        
+        NSInteger app = 445;
+        char cf[sizeof(NSInteger)];
+        for (int i = 0; i < sizeof(NSInteger); i++) {
+            cf[i] = ((char *)&app)[i];
+        }
+        
+        
         void *p = (void *)c;
+        void *p1 = (void *)cf;
         
-        void * vvv = p;
-        
-        [invocation setArgument:vvv atIndex:3];
-        
+        [invocation setArgument:p atIndex:3];
+        [invocation setArgument:p1 atIndex:2];
         continue;
         
         switch (argType[0]) {

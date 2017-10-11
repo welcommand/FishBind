@@ -16,6 +16,7 @@ struct CGTest {
     CGPoint p;
     CGFloat f;
     NSInteger i;
+
     CGPoint *pp;
 };
 typedef struct CGTest CGTest;
@@ -62,7 +63,7 @@ int main(int argc, const char * argv[]) {
         //put ====object1
         
         
-        NSInteger (^testBlock)(NSInteger i, NSInteger j, CGPoint p) = ^(NSInteger i, NSInteger j, CGPoint p) {
+        NSInteger (^testBlock)(NSInteger i, NSInteger j, CGTest p) = ^(NSInteger i, NSInteger j, CGTest p) {
             NSLog(@"asdasdsa");
             return i + j;
         };
@@ -77,7 +78,7 @@ int main(int argc, const char * argv[]) {
                                          }]
                                  ]];
         
-        CGPoint point  = (CGPoint){100,2.2};
+        CGTest point  = (CGTest){100,2.2};
         
         testBlock(3,4,point);
         
