@@ -12,12 +12,13 @@
 #import <objc/message.h>
 
 //todo
-//kvo
-// block
-// lock
-// method info
-// remove
+//struct
 // type codeing
+
+// remove
+//kvo
+
+// lock
 
 static NSString const* IIFish_Prefix = @"IIFish_";
 
@@ -31,6 +32,9 @@ typedef NS_OPTIONS(NSInteger, IIFishFlage) {
 
 
 @implementation IIFishCallBack
+- (NSString *)description {
+    return [NSString stringWithFormat:@"tager = %@\nselector = %@\nargs = %@\nresule = %@",_tager,_selector,_args,_resule];
+}
 @end
 
 #pragma mark-
@@ -207,74 +211,88 @@ static void IIFish_TypeEncoding_Set_MethodArgs(NSInvocation *invocation, NSInteg
         const char *argType = [invocation.methodSignature getArgumentTypeAtIndex:i];
         
         switch (argType[0]) {
-            case 'c' : {
-                char arg = va_arg(list, int);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'i': {
-                int arg = va_arg(list, int);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 's': {
-                short arg = va_arg(list, int);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'l': {
-                long arg = va_arg(list, long);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'q': {
-                long long arg = va_arg(list, long long);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'C': {
-                unsigned char arg = va_arg(list, int);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'I': {
-                unsigned int arg = va_arg(list, unsigned int);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'S': {
-                unsigned short arg = va_arg(list, int);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'L': {
-                unsigned long arg = va_arg(list, unsigned long);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'Q': {
-                unsigned long long arg = va_arg(list, unsigned long long);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'f': {
-                float arg = va_arg(list, double);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'd': {
-                double arg = va_arg(list, double);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case 'B': {
-                BOOL arg = va_arg(list, int);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case '*': {
-                char *arg = va_arg(list, char *);
-                [invocation setArgument:arg atIndex:i];
-            } break;
-            case '@': {
-                id arg = va_arg(list, id);
-                [invocation setArgument:(__bridge void *)arg atIndex:i];
-            } break;
-            case '#': {
-                Class arg = va_arg(list, Class);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
-            case ':': {
-                SEL arg = va_arg(list, SEL);
-                [invocation setArgument:(void *)&arg atIndex:i];
-            } break;
+                case 'c' : {
+                    char arg = va_arg(list, int);
+                    [invocation setArgument:(void *)&arg atIndex:i];
+                } break;
+                case 'i': {
+                    int arg = va_arg(list, int);
+                    [invocation setArgument:(void *)&arg atIndex:i];
+                } break;
+                case 's': {
+                    short arg = va_arg(list, int);
+                    [invocation setArgument:(void *)&arg atIndex:i];
+                } break;
+                case 'l': {
+                    long arg = va_arg(list, long);
+                    [invocation setArgument:(void *)&arg atIndex:i];
+                } break;
+                case 'q': {
+                    long long arg = va_arg(list, long long);
+                    [invocation setArgument:(void *)&arg atIndex:i];
+                } break;
+                case 'C': {
+                    unsigned char arg = va_arg(list, int);
+                    [invocation setArgument:(void *)&arg atIndex:i];
+                } break;
+                case 'I': {
+                    unsigned int arg = va_arg(list, unsigned int);
+                    [invocation setArgument:(void *)&arg atIndex:i];
+                } break;
+                case 'S': {
+                    unsigned short arg = va_arg(list, int);
+                    [invocation setArgument:(void *)&arg atIndex:i];
+                } break;
+                case 'L': {
+                    unsigned long arg = va_arg(list, unsigned long);
+                    [invocation setArgument:(void *)&arg atIndex:i];
+                } break;
+                case 'Q': {
+                    unsigned long long arg = va_arg(list, unsigned long long);
+                    [invocation setArgument:(void *)&arg atIndex:i];
+                } break;
+                case 'f': {
+                    float arg = va_arg(list, double);
+                    [invocation setArgument:(void *)&arg atIndex:i];
+                } break;
+                case 'd': {
+                    double arg = va_arg(list, double);
+                    [invocation setArgument:(void *)&arg atIndex:i];
+                } break;
+                case 'B': {
+                    BOOL arg = va_arg(list, int);
+                    [invocation setArgument:(void *)&arg atIndex:i];
+                } break;
+                case '*': {
+                    char *arg = va_arg(list, char *);
+                    [invocation setArgument:arg atIndex:i];
+                } break;
+                case '@': {
+                    id arg = va_arg(list, id);
+                    [invocation setArgument:(__bridge void *)arg atIndex:i];
+                } break;
+                case '#': {
+                    Class arg = va_arg(list, Class);
+                    [invocation setArgument:(void *)&arg atIndex:i];
+                } break;
+                case ':': {
+                    SEL arg = va_arg(list, SEL);
+                    [invocation setArgument:(void *)&arg atIndex:i];
+                } break;
+                case '?' :
+                case '^' : {
+                    void *arg = va_arg(list, void *);
+                    [invocation setArgument:(void *)&arg atIndex:i];
+                } break;
+                case '{' : {
+                    typeof(argType) i;
+                    
+                    void *arg = va_arg(list, void *);
+                    [invocation setArgument:(void *)&arg atIndex:i];
+                    NSLog(@"asdasd");
+                    
+                    
+                }
         }
     }
 }
@@ -285,14 +303,14 @@ static void *IIFish_TypeEncoding_Get_ReturnValue(const char *returnValueTypeCode
 #pragma clang diagnostic ignored "-Wint-conversion"
     
     switch (returnValueTypeCodeing[0]) {
-        case 'c' : {
-            char *arg = returnValue;
-            return *arg;
-        }
-        case 'i': {
-            int *arg = returnValue;
-            return *arg;
-        }
+            case 'c' : {
+                char *arg = returnValue;
+                return *arg;
+            }
+            case 'i': {
+                int *arg = returnValue;
+                return *arg;
+            }
     }
     
 #pragma clang diagnostic pop
@@ -304,93 +322,93 @@ static id IIFish_TypeEncoding_Get_ReturnValueInBox(NSInvocation *invocation) {
     const char *argType = [invocation.methodSignature methodReturnType];
     id argBox;
     switch (argType[0]) {
-        case 'c' : {
-            char arg;
-            [invocation getReturnValue:&arg];
-            argBox = [NSNumber numberWithChar:arg];
-        } break;
-        case 'i': {
-            int arg;
-            [invocation getReturnValue:&arg];
-            argBox = [NSNumber numberWithInt:arg];
-        } break;
-        case 's': {
-            short arg;
-            [invocation getReturnValue:&arg];
-            argBox = [NSNumber numberWithShort:arg];
-        } break;
-        case 'l': {
-            long arg;
-           [invocation getReturnValue:&arg];
-            argBox = [NSNumber numberWithLong:arg];
-        } break;
-        case 'q': {
-            long long arg;
-            [invocation getReturnValue:&arg];
-            argBox = [NSNumber numberWithLongLong:arg];
-        } break;
-        case 'C': {
-            unsigned char arg;
-            [invocation getReturnValue:&arg];
-            argBox = [NSNumber numberWithUnsignedChar:arg];
-        } break;
-        case 'I': {
-            unsigned int arg;
-            [invocation getReturnValue:&arg];
-            argBox = [NSNumber numberWithUnsignedInteger:arg];
-        } break;
-        case 'S': {
-            unsigned short arg;
-            [invocation getReturnValue:&arg];
-            argBox = [NSNumber numberWithUnsignedShort:arg];
-        } break;
-        case 'L': {
-            unsigned long arg;
-            [invocation getReturnValue:&arg];
-            argBox = [NSNumber numberWithUnsignedLong:arg];
-        } break;
-        case 'Q': {
-            unsigned long long arg;
-           [invocation getReturnValue:&arg];
-            argBox = [NSNumber numberWithUnsignedLongLong:arg];
-        } break;
-        case 'f': {
-            float arg;
-            [invocation getReturnValue:&arg];
-            argBox = [NSNumber numberWithFloat:arg];
-        } break;
-        case 'd': {
-            double arg;
-            [invocation getReturnValue:&arg];
-            argBox = [NSNumber numberWithDouble:arg];
-        } break;
-        case 'B': {
-            BOOL arg;
-            [invocation getReturnValue:&arg];
-            argBox = [NSNumber numberWithBool:arg];
-        } break;
-        case '*': {
-            char *arg;
-            [invocation getReturnValue:&arg];
-            argBox = [[NSString alloc] initWithUTF8String:arg];
-        } break;
-        case '@': {
-            id arg;
-            [invocation getReturnValue:&arg];
-            argBox = arg;
-        } break;
-        case '#': {
-            Class arg;
-            [invocation getReturnValue:&arg];
-            argBox = NSStringFromClass(arg);
-        } break;
-        case ':': {
-            SEL arg;
-            [invocation getReturnValue:&arg];
-            argBox = NSStringFromSelector(arg);
-        } break;
+            case 'c' : {
+                char arg;
+                [invocation getReturnValue:&arg];
+                argBox = [NSNumber numberWithChar:arg];
+            } break;
+            case 'i': {
+                int arg;
+                [invocation getReturnValue:&arg];
+                argBox = [NSNumber numberWithInt:arg];
+            } break;
+            case 's': {
+                short arg;
+                [invocation getReturnValue:&arg];
+                argBox = [NSNumber numberWithShort:arg];
+            } break;
+            case 'l': {
+                long arg;
+                [invocation getReturnValue:&arg];
+                argBox = [NSNumber numberWithLong:arg];
+            } break;
+            case 'q': {
+                long long arg;
+                [invocation getReturnValue:&arg];
+                argBox = [NSNumber numberWithLongLong:arg];
+            } break;
+            case 'C': {
+                unsigned char arg;
+                [invocation getReturnValue:&arg];
+                argBox = [NSNumber numberWithUnsignedChar:arg];
+            } break;
+            case 'I': {
+                unsigned int arg;
+                [invocation getReturnValue:&arg];
+                argBox = [NSNumber numberWithUnsignedInteger:arg];
+            } break;
+            case 'S': {
+                unsigned short arg;
+                [invocation getReturnValue:&arg];
+                argBox = [NSNumber numberWithUnsignedShort:arg];
+            } break;
+            case 'L': {
+                unsigned long arg;
+                [invocation getReturnValue:&arg];
+                argBox = [NSNumber numberWithUnsignedLong:arg];
+            } break;
+            case 'Q': {
+                unsigned long long arg;
+                [invocation getReturnValue:&arg];
+                argBox = [NSNumber numberWithUnsignedLongLong:arg];
+            } break;
+            case 'f': {
+                float arg;
+                [invocation getReturnValue:&arg];
+                argBox = [NSNumber numberWithFloat:arg];
+            } break;
+            case 'd': {
+                double arg;
+                [invocation getReturnValue:&arg];
+                argBox = [NSNumber numberWithDouble:arg];
+            } break;
+            case 'B': {
+                BOOL arg;
+                [invocation getReturnValue:&arg];
+                argBox = [NSNumber numberWithBool:arg];
+            } break;
+            case '*': {
+                char *arg;
+                [invocation getReturnValue:&arg];
+                argBox = [[NSString alloc] initWithUTF8String:arg];
+            } break;
+            case '@': {
+                id arg;
+                [invocation getReturnValue:&arg];
+                argBox = arg;
+            } break;
+            case '#': {
+                Class arg;
+                [invocation getReturnValue:&arg];
+                argBox = NSStringFromClass(arg);
+            } break;
+            case ':': {
+                SEL arg;
+                [invocation getReturnValue:&arg];
+                argBox = NSStringFromSelector(arg);
+            } break;
     }
-
+    
     return argBox;
 }
 
@@ -401,94 +419,96 @@ static NSArray *IIFish_TypeEncoding_Get_MethodArgs(NSInvocation *invocation, NSI
         const char *argType = [invocation.methodSignature getArgumentTypeAtIndex:i];
         id argBox;
         switch (argType[0]) {
-            case 'c' : {
-                char arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = [NSNumber numberWithChar:arg];
-            } break;
-            case 'i': {
-                int arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = [NSNumber numberWithInt:arg];
-            } break;
-            case 's': {
-                short arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = [NSNumber numberWithShort:arg];
-            } break;
-            case 'l': {
-                long arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = [NSNumber numberWithLong:arg];
-            } break;
-            case 'q': {
-                long long arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = [NSNumber numberWithLongLong:arg];
-            } break;
-            case 'C': {
-                unsigned char arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = [NSNumber numberWithUnsignedChar:arg];
-            } break;
-            case 'I': {
-                unsigned int arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = [NSNumber numberWithUnsignedInteger:arg];
-            } break;
-            case 'S': {
-                unsigned short arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = [NSNumber numberWithUnsignedShort:arg];
-            } break;
-            case 'L': {
-                unsigned long arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = [NSNumber numberWithUnsignedLong:arg];
-            } break;
-            case 'Q': {
-                unsigned long long arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = [NSNumber numberWithUnsignedLongLong:arg];
-            } break;
-            case 'f': {
-                float arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = [NSNumber numberWithFloat:arg];
-            } break;
-            case 'd': {
-                double arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = [NSNumber numberWithDouble:arg];
-            } break;
-            case 'B': {
-                BOOL arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = [NSNumber numberWithBool:arg];
-            } break;
-            case '*': {
-                char *arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = [[NSString alloc] initWithUTF8String:arg];
-            } break;
-            case '@': {
-                id arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = arg;
-            } break;
-            case '#': {
-                Class arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = NSStringFromClass(arg);
-            } break;
-            case ':': {
-                SEL arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = NSStringFromSelector(arg);
-            } break;
+                case 'c' : {
+                    char arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = [NSNumber numberWithChar:arg];
+                } break;
+                case 'i': {
+                    int arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = [NSNumber numberWithInt:arg];
+                } break;
+                case 's': {
+                    short arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = [NSNumber numberWithShort:arg];
+                } break;
+                case 'l': {
+                    long arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = [NSNumber numberWithLong:arg];
+                } break;
+                case 'q': {
+                    long long arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = [NSNumber numberWithLongLong:arg];
+                } break;
+                case 'C': {
+                    unsigned char arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = [NSNumber numberWithUnsignedChar:arg];
+                } break;
+                case 'I': {
+                    unsigned int arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = [NSNumber numberWithUnsignedInteger:arg];
+                } break;
+                case 'S': {
+                    unsigned short arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = [NSNumber numberWithUnsignedShort:arg];
+                } break;
+                case 'L': {
+                    unsigned long arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = [NSNumber numberWithUnsignedLong:arg];
+                } break;
+                case 'Q': {
+                    unsigned long long arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = [NSNumber numberWithUnsignedLongLong:arg];
+                } break;
+                case 'f': {
+                    float arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = [NSNumber numberWithFloat:arg];
+                } break;
+                case 'd': {
+                    double arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = [NSNumber numberWithDouble:arg];
+                } break;
+                case 'B': {
+                    BOOL arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = [NSNumber numberWithBool:arg];
+                } break;
+                case '*': {
+                    char *arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = [[NSString alloc] initWithUTF8String:arg];
+                } break;
+                case '@': {
+                    id arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = arg;
+                } break;
+                case '#': {
+                    Class arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = NSStringFromClass(arg);
+                } break;
+                case ':': {
+                    SEL arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = NSStringFromSelector(arg);
+                } break;
         }
         
-        [args addObject:argBox];
+        if (argBox) {
+            [args addObject:argBox];
+        }
     }
     
     return args;
@@ -558,11 +578,9 @@ typedef void (*IIFishBlockFunc) (void*, ...);
 static BOOL IIFish_Block_TypeCheck(id object);
 static id IIFish_Block_Get_TempBlock(IIFishBlock block);
 static IIObserverAsset *IIFish_Class_Get_Asset(id object);
-
 static  NSString const *IIFishBlockObserverKey = @"IIFishBlockObserverKey";
 
 void* IIFishBlockFuncPtr(IIFishBlock block, ...) {
-    
     struct IIFishBlock_descriptor_3 *descriptor_3 =  _IIFish_Block_descriptor_3(block);
     NSMethodSignature *ms = [NSMethodSignature signatureWithObjCTypes:descriptor_3->signature];
     va_list ap;
@@ -578,9 +596,13 @@ void* IIFishBlockFuncPtr(IIFishBlock block, ...) {
         tempBlock = (__bridge id)&tb;
     }
     
-    void *returnValue = malloc([ms methodReturnLength]);
+    
     [invo invokeWithTarget:tempBlock];
-    [invo getReturnValue:returnValue];
+    void *returnValue = NULL;
+    if ([ms methodReturnLength] > 0) {
+        returnValue = malloc([ms methodReturnLength]);
+        [invo getReturnValue:returnValue];
+    }
     
     
     IIObserverAsset *asseet = IIFish_Class_Get_Asset((__bridge id)block);
@@ -618,12 +640,12 @@ static void IIFish_Block_Set_TempMallocBlock(IIFishBlock block, IIFishBlock temp
     objc_setAssociatedObject((__bridge id)block, @"IIFish_Block_TempBlock", (__bridge id)tempBlock, OBJC_ASSOCIATION_ASSIGN);
 }
 
-static void * IIFish_Block_Get_DisposeFunc(id block) {
-    return (__bridge void *)objc_getAssociatedObject(block, @"IIFish_Block_DisposeFunc");
+static long long IIFish_Block_Get_DisposeFunc(id block) {
+    return [objc_getAssociatedObject(block, "IIFish_Block_DisposeFunc") longLongValue];
 }
 
-static void IIFish_Block_Set_DisposeFunc(id block, void * disposeFunc) {
-    objc_setAssociatedObject(block, @"IIFish_Block_DisposeFunc", (__bridge id)disposeFunc, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+static void IIFish_Block_Set_DisposeFunc(id block, long long disposeFuncAdders) {
+    objc_setAssociatedObject(block, "IIFish_Block_DisposeFunc", @(disposeFuncAdders), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 void IIFish_Block_disposeFunc(const void * block_Layout) {
@@ -632,7 +654,9 @@ void IIFish_Block_disposeFunc(const void * block_Layout) {
     id tempBlock = IIFish_Block_Get_TempBlock(block);
     free((__bridge void *)tempBlock);
     
-    void (*disposeFunc)(const void *) = IIFish_Block_Get_DisposeFunc((__bridge id)(block_Layout));
+    long long disposeAdders = IIFish_Block_Get_DisposeFunc((__bridge id)(block_Layout));
+    
+    void (*disposeFunc)(const void *) = (void (*)(const void *))disposeAdders;
     if (disposeFunc) {
         disposeFunc(block_Layout);
     }
@@ -642,8 +666,9 @@ static void IIFish_Block_HookDisposeFuncOnces(IIFishBlock block) {
     if (block->flags & IIFishBLOCK_HAS_COPY_DISPOSE) {
         struct IIFishBlock_descriptor_2 *descriptor_2  = _IIFish_Block_descriptor_2(block);
         if (descriptor_2->dispose != IIFish_Block_disposeFunc) {
-            void *disposeFunc = descriptor_2->dispose;
-            IIFish_Block_Set_DisposeFunc((__bridge id)(block), disposeFunc);
+            long long disposeAdders = (long long)descriptor_2->dispose;
+            
+            IIFish_Block_Set_DisposeFunc((__bridge id)(block), disposeAdders);
             descriptor_2->dispose = IIFish_Block_disposeFunc;
         }
     }
@@ -658,7 +683,6 @@ static IIFishBlock IIFish_Block_DeepCopy(IIFishBlock block) {
     IIFishBlock newBlock = NULL;
     struct IIFishBlock_descriptor_2 *descriptor_2 = _IIFish_Block_descriptor_2(block);
     if (descriptor_2) {
-        // size == block + ref objects ? need test
         newBlock = malloc(block->descriptor->size);
         if (!newBlock) return nil;
         memmove(newBlock, block, block->descriptor->size);
@@ -712,7 +736,7 @@ void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
     anInvocation.selector = NSSelectorFromString(orgSelString);
     [anInvocation invoke];
     
-
+    
     // asset
     IIObserverAsset *asseet = IIFish_Class_Get_Asset(self);
     __block NSArray *observers;
@@ -884,7 +908,7 @@ static SEL IIFish_Property_GetSelector(Class cls, const char *propertyName) {
             free(attributes);
             free(s);
             return sel;
-
+            
         }
     }
     char *s = malloc(strlen(propertyName));

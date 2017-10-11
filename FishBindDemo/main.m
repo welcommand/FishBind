@@ -51,22 +51,37 @@ int main(int argc, const char * argv[]) {
         NSLog(@"====%@",objectA1.name);
         //put ====object1
         
-        
-        NSInteger (^testBlock)(NSInteger i, NSInteger j) = ^(NSInteger i, NSInteger j) {
-            return i + j;
+        NSInteger (^testBlock)(NSInteger i, NSInteger j, CGPoint point) = ^(NSInteger i, NSInteger j, CGPoint p) {
+            NSInteger sum = p.x + p.y;
+            return sum;
         };
         
         [IIFishBind bindFishes:@[
                                  [IIFish postBlock:testBlock],
                                  [IIFish observer:objectA1
                                          callBack:^(IIFishCallBack *callBack, id deadFish) {
-                                             
                                              NSLog(@"test block called  :   %@ + %@ = %@",callBack.args[0], callBack.args[1], callBack.resule);
                                              
                                          }]
                                  ]];
         
-        testBlock(3,4);
+        
+        testBlock(3,4,(CGPoint){1,1});
+        
+        void (^testMallocBlock) ()= ^() {
+            objectA1.age = 100;
+            NSLog(@"age = %@",@(objectA1.age));
+        };
+        
+        [IIFishBind bindFishes:@[
+                                 [IIFish postBlock:testMallocBlock],
+                                 [IIFish observer:objectA1
+                                         callBack:^(IIFishCallBack *callBack, id deadFish) {
+                                             NSLog(@"malloc Block did Call");
+                                         }]
+                                 ]];
+        
+        testMallocBlock();
         
     }
     return 0;
