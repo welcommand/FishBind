@@ -201,11 +201,11 @@ static void IIFish_ClassTable_AddClass(Class cls) {
 
 
 
-#define IIFishGetArgFromVAList(type1, type2) {type1 arg = va_arg(list, type2);char s[sizeof(type1)];memcpy(s, &arg, sizeof(type1));return s;}
+#define IIFishGetArgFromVAList(type1, type2) {type1 arg = va_arg(list, type2);memcpy(d, &arg, sizeof(type1));}break;
 
 static char* testFunc(char *s,va_list list);
 
-static char *test(char *type, va_list list) {;
+static void IIFish_CpylistArg(char *d, const char *type, va_list list) {
     switch (type[0]) {
         case 'c' :
             IIFishGetArgFromVAList(char, int);
@@ -245,11 +245,9 @@ static char *test(char *type, va_list list) {;
         case '^' :
             IIFishGetArgFromVAList(void *, void *);
         case '{' : {
-            return  testFunc(type, list);
+            //testFunc(type, list);
         }
     }
-    
-    return NULL;
 }
 
 static char* testFunc(char *s, va_list list) {
@@ -300,35 +298,13 @@ static void IIFish_TypeEncoding_Set_MethodArgs(NSInvocation *invocation, NSInteg
     
     for (NSInteger i = firstArgIndex; i < [invocation.methodSignature numberOfArguments]; i ++) {
         const char *argType = [invocation.methodSignature getArgumentTypeAtIndex:i];
-        char *v = test(argType, list);
-        long long  vv = atoll(v);
-        
-        CGFloat f1 = 321;
-        CGFloat f2 = 222;
-        char c [sizeof(CGFloat) * 2];
-        
-        for (int i = 0; i < sizeof(CGFloat); i++) {
-            c[i] = ((char *)&f1)[i];
-        }
-        for (int i = sizeof(CGFloat); i < sizeof(CGFloat) * 2; i++) {
-            c[i] = ((char *)&f2)[i];
-        }
-        
-        
 
+        NSUInteger valueSize = 0;
+        NSGetSizeAndAlignment(argType, &valueSize, NULL);
+        char c[valueSize];
+        IIFish_CpylistArg(c, argType, list);
+        [invocation setArgument:c atIndex:i];
         
-        NSInteger app = 445;
-        char cf[sizeof(NSInteger)];
-        for (int i = 0; i < sizeof(NSInteger); i++) {
-            cf[i] = ((char *)&app)[i];
-        }
-        
-        
-        void *p = (void *)c;
-        void *p1 = (void *)cf;
-        
-        [invocation setArgument:p atIndex:3];
-        [invocation setArgument:p1 atIndex:2];
         continue;
         
         switch (argType[0]) {
