@@ -13,9 +13,7 @@
 
 //todo
 //kvo
-// block
 // lock
-// method info
 // remove
 // type codeing
 
@@ -201,10 +199,139 @@ static void IIFish_ClassTable_AddClass(Class cls) {
 #pragma mark- Type Encodings
 // https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
 
+
+
+#define IIFishGetArgFromVAList(type1, type2) {type1 arg = va_arg(list, type2); return (void *)&arg;}
+static char* testFunc(char *s,va_list list);
+
+
+static void *test(char *type, va_list list) {;
+    switch (type[0]) {
+        case 'c' :
+            IIFishGetArgFromVAList(char, int);
+        case 'i':
+            IIFishGetArgFromVAList(int, int);
+        case 's':
+            IIFishGetArgFromVAList(short, int);
+        case 'l':
+            IIFishGetArgFromVAList(long, long);
+        case 'q': {
+            void *v = NULL;
+            char c[sizeof(long long)];
+            
+            long long arg = va_arg(list, long long);
+            
+            memcpy(c, (char *)&arg, 8);
+            
+            return c;
+        }
+            //IIFishGetArgFromVAList(long long, long long);
+        case 'C':
+            IIFishGetArgFromVAList(unsigned char, int);
+        case 'I':
+            IIFishGetArgFromVAList(unsigned int, unsigned int);
+        case 'S':
+            IIFishGetArgFromVAList(unsigned short, int);
+        case 'L':
+            IIFishGetArgFromVAList(unsigned long, unsigned long);
+        case 'Q':
+            IIFishGetArgFromVAList(unsigned long long, unsigned long long);
+        case 'f':
+            IIFishGetArgFromVAList(float, double);
+        case 'd':{
+            
+        }
+            //IIFishGetArgFromVAList(double, double);
+        case 'B':
+            IIFishGetArgFromVAList(BOOL, int);
+        case '*':
+            IIFishGetArgFromVAList(char *, char *);
+        case '@':
+            IIFishGetArgFromVAList(id, id);
+        case '#':
+            IIFishGetArgFromVAList(Class, Class);
+        case ':':
+            IIFishGetArgFromVAList(SEL, SEL);
+        case '?' :
+        case '^' :
+            IIFishGetArgFromVAList(void *, void *);
+        case '{' : {
+            return  testFunc(type, list);
+        }
+    }
+    
+    return NULL;
+}
+
+static char* testFunc(char *s, va_list list) {
+    NSUInteger valueSize = 0;
+    NSGetSizeAndAlignment(s, &valueSize, NULL);
+    char data[valueSize];
+    int dataP = 0;
+    
+    for (int i = 0; i < strlen(s); i++) {
+        if (s[i] == '{') {
+            while (s[++i] != '=') {}
+        } else if (s[i] == '[') {
+            i++;
+            int count = 0;
+            while (isnumber(s[i])) {
+                count = count * 10 + (s[i] - '0');
+                i++;
+            }
+            if (count != 0) {
+                //copy
+            }
+            i++;
+        } else if (s[i] == '}' || s[i] == ']') {
+        } else {
+            char *t = test(s + i ,list);
+            NSUInteger valueSize = 0;
+            NSGetSizeAndAlignment(&s[i], &valueSize, NULL);
+            
+            for (int j = 0 ; j < valueSize;) {
+                data[dataP++] = t[j++];
+            }
+            if (s[i] == '^') {
+                while (s[++i] == '^') {}
+                if (s[i] == '{' || s[i] == '[' || s[i] == '(') {
+                    i+=2;
+                } else {
+                    i++;
+                }
+            }
+        }
+    }
+    
+    return data;
+}
+
+
 static void IIFish_TypeEncoding_Set_MethodArgs(NSInvocation *invocation, NSInteger firstArgIndex, va_list list) {
     
     for (NSInteger i = firstArgIndex; i < [invocation.methodSignature numberOfArguments]; i ++) {
         const char *argType = [invocation.methodSignature getArgumentTypeAtIndex:i];
+        char *v = test(argType, list);
+        long long  vv = atoll(v);
+        
+        CGFloat f1 = 321;
+        CGFloat f2 = 222;
+        char c [sizeof(CGFloat) * 2];
+        
+        for (int i = 0; i < sizeof(CGFloat); i++) {
+            c[i] = ((char *)&f1)[i];
+        }
+        for (int i = sizeof(CGFloat); i < sizeof(CGFloat) * 2; i++) {
+            c[i] = ((char *)&f2)[i];
+        }
+        
+        void *p = (void *)c;
+        
+        void * vvv = p;
+        
+        [invocation setArgument:vvv atIndex:3];
+        
+        continue;
         
         switch (argType[0]) {
             case 'c' : {
@@ -275,6 +402,12 @@ static void IIFish_TypeEncoding_Set_MethodArgs(NSInvocation *invocation, NSInteg
                 SEL arg = va_arg(list, SEL);
                 [invocation setArgument:(void *)&arg atIndex:i];
             } break;
+            case '{' : {
+                NSUInteger valueSize = 0;
+                NSGetSizeAndAlignment(argType, &valueSize, NULL);
+                CGFloat arg = va_arg(list, CGFloat);
+                [invocation setArgument:&arg atIndex:i];
+            }
         }
     }
 }
@@ -488,7 +621,10 @@ static NSArray *IIFish_TypeEncoding_Get_MethodArgs(NSInvocation *invocation, NSI
             } break;
         }
         
-        [args addObject:argBox];
+        if (argBox) {
+            [args addObject:argBox];
+        }
+        
     }
     
     return args;
@@ -942,6 +1078,3 @@ static SEL IIFish_Property_GetSelector(Class cls, const char *propertyName) {
 }
 
 @end
-
-
-
