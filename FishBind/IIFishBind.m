@@ -201,11 +201,11 @@ static void IIFish_ClassTable_AddClass(Class cls) {
 
 
 
-#define IIFishGetArgFromVAList(type1, type2) {type1 arg = va_arg(list, type2); return (void *)&arg;}
+#define IIFishGetArgFromVAList(type1, type2) {type1 arg = va_arg(list, type2);char s[sizeof(type1)];memcpy(s, &arg, sizeof(type1));return s;}
+
 static char* testFunc(char *s,va_list list);
 
-
-static void *test(char *type, va_list list) {;
+static char *test(char *type, va_list list) {;
     switch (type[0]) {
         case 'c' :
             IIFishGetArgFromVAList(char, int);
@@ -215,17 +215,8 @@ static void *test(char *type, va_list list) {;
             IIFishGetArgFromVAList(short, int);
         case 'l':
             IIFishGetArgFromVAList(long, long);
-        case 'q': {
-            void *v = NULL;
-            char c[sizeof(long long)];
-            
-            long long arg = va_arg(list, long long);
-            
-            memcpy(c, (char *)&arg, 8);
-            
-            return c;
-        }
-            //IIFishGetArgFromVAList(long long, long long);
+        case 'q':
+            IIFishGetArgFromVAList(long long, long long);
         case 'C':
             IIFishGetArgFromVAList(unsigned char, int);
         case 'I':
@@ -238,10 +229,8 @@ static void *test(char *type, va_list list) {;
             IIFishGetArgFromVAList(unsigned long long, unsigned long long);
         case 'f':
             IIFishGetArgFromVAList(float, double);
-        case 'd':{
-            
-        }
-            //IIFishGetArgFromVAList(double, double);
+        case 'd':
+            IIFishGetArgFromVAList(double, double);
         case 'B':
             IIFishGetArgFromVAList(BOOL, int);
         case '*':
@@ -325,6 +314,8 @@ static void IIFish_TypeEncoding_Set_MethodArgs(NSInvocation *invocation, NSInteg
             c[i] = ((char *)&f2)[i];
         }
         
+        
+
         
         NSInteger app = 445;
         char cf[sizeof(NSInteger)];
