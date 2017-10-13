@@ -205,12 +205,6 @@ static void IIFish_ClassTable_AddClass(Class cls) {
 #pragma mark- Type Encodings
 // https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
 
-
-
-
-
-
-
 static void IIFish_CpylistArg(char *d, const char *type, va_list list) {
 
 #define IIFishGetArgFromVAList(cType, type1, type2) case cType : {type1 arg = va_arg(list, type2);memcpy(d, &arg, sizeof(type1));}break;

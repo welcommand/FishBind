@@ -14,7 +14,7 @@
 
 struct CGTest {
     NSInteger i;
-    NSInteger j;
+    CGFloat j;
 };
 typedef struct CGTest CGTest;
 //{CGTest={CGPoint=dd}dq[30c]}
@@ -82,18 +82,18 @@ int main(int argc, const char * argv[]) {
             NSLog(@"age = %@",@(objectA1.age));
         };
         
-        [IIFishBind bindFishes:@[
-                                 [IIFish postBlock:testMallocBlock],
-                                 [IIFish observer:objectA1
-                                         callBack:^(IIFishCallBack *callBack, id deadFish) {
-                                             NSLog(@"malloc Block did Call");
-                                         }]
-                                 ]];
+//        [IIFishBind bindFishes:@[
+//                                 [IIFish postBlock:testMallocBlock],
+//                                 [IIFish observer:objectA1
+//                                         callBack:^(IIFishCallBack *callBack, id deadFish) {
+//                                             NSLog(@"malloc Block did Call");
+//                                         }]
+//                                 ]];
         
-        testMallocBlock();
-        CGTest point  = (CGTest){100,200};
+//        testMallocBlock();
+        CGTest point  = (CGTest){100,200.1};
         
-        testBlock(3,4,point);
+        testBlock(3.1,7,point);
     }
     return 0;
 }
