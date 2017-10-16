@@ -76,22 +76,21 @@ int main(int argc, const char * argv[]) {
         
 
         
-        void (^testMallocBlock) ()= ^() {
+        void (^testMallocBlock) (void)= ^() {
             objectA1.age = 100;
             NSLog(@"age = %@",@(objectA1.age));
         };
         
-//        [IIFishBind bindFishes:@[
-//                                 [IIFish postBlock:testMallocBlock],
-//                                 [IIFish observer:objectA1
-//                                         callBack:^(IIFishCallBack *callBack, id deadFish) {
-//                                             NSLog(@"malloc Block did Call");
-//                                         }]
-//                                 ]];
+        [IIFishBind bindFishes:@[
+                                 [IIFish postBlock:testMallocBlock],
+                                 [IIFish observer:objectA1
+                                         callBack:^(IIFishCallBack *callBack, id deadFish) {
+                                             NSLog(@"malloc Block did Call");
+                                         }]
+                                 ]];
         
-//        testMallocBlock();
-        CGTest point  = (CGTest){100,200.1};
-        
+        testMallocBlock();
+
         testBlock(3.1);
         testBlock(9.1);
     }

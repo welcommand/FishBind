@@ -654,7 +654,7 @@ void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
     }];
     
     //
-    IIFishCallBack * (^CallBackBlock)() = ^() {
+    IIFishCallBack * (^CallBackBlock)(void) = ^() {
         IIFishCallBack *callBack = [[IIFishCallBack alloc] init];
         callBack.tager = self;
         callBack.selector = NSStringFromSelector(anInvocation.selector);
@@ -891,8 +891,18 @@ void IIWatch_forwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
         callBack.resule = IIFish_TypeEncoding_Get_ReturnValueInBox(anInvocation);
         callBackBlock(callBack);
     }
-}
+    
+    SEL forwardSel = sel_getUid("IIWatch_forwardInvocation:");
+    Method forwardOrg = class_getInstanceMethod(object_getClass(self), forwardSel);
+    if (forwardOrg) {
+        
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+                [self performSelector:forwardSel withObject:anInvocation];
+#pragma clang diagnostic pop
 
+    }
+}
 
 @implementation IIWatchmen
 
