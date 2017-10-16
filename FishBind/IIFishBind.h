@@ -45,3 +45,11 @@ typedef void(^IIFishCallBackBlock) (IIFishCallBack *callBack, id deadFish);
 + (void)bindFishes:(NSArray <IIFish*> *)fishes;
 + (void)removeFish:(IIFish *)fishes;
 @end
+
+
+typedef void(^IIWatchCallBackBlock) (IIFishCallBack *callBack);
+
+@interface IIWatchmen :NSObject
++ (void)watchClass:(Class)cls containSuper:(BOOL)contain callBack:(IIWatchCallBackBlock)callBack;
++ (void)watchObject:(id)obj containSuper:(BOOL)contain callBack:(IIWatchCallBackBlock)callBack;
+@end
