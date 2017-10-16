@@ -567,7 +567,7 @@ static id IIFish_Block_Get_TempBlock(IIFishBlock block);
 static IIObserverAsset *IIFish_Class_Get_Asset(id object);
 static  NSString const *IIFishBlockObserverKey = @"IIFishBlockObserverKey";
 
-void* IIFishBlockFuncPtr(IIFishBlock block, ...) {
+void* IIFishBlockFuncPtr(IIFishBlock block,...) {
     struct IIFishBlock_descriptor_3 *descriptor_3 =  _IIFish_Block_descriptor_3(block);
     NSMethodSignature *ms = [NSMethodSignature signatureWithObjCTypes:descriptor_3->signature];
     va_list ap;
@@ -693,7 +693,7 @@ static void IIFish_Hook_Block(id obj) {
     IIFishBlock block = (__bridge IIFishBlock)(obj);
     if (!IIFish_Block_Get_TempBlock(block)) {
         IIFish_Block_DeepCopy(block);
-        block->invoke = (IIFishBlockFunc)IIFishBlockFuncPtr;
+        block->invoke = (IIFishBlockFunc)_objc_msgForward;
     }
 }
 
@@ -822,13 +822,27 @@ static void IIFish_Hook_Class(id object) {
     }
 }
 
+void tt(id obj, SEL _cmd,...) {
+    
+    va_list ap;
+    va_start(ap, _cmd);
+    
+    NSInteger i = va_arg(ap, NSInteger);
+    
+    NSLog(@"asdasdasd");
+    
+    va_end(ap);
+    
+    
+}
+
 static void IIFish_Hook_Method(id object, SEL cmd) {
     
     Class cls = object_getClass(object);
     Method orgMethod = class_getInstanceMethod(cls, cmd);
     NSString *fakeSelStr = [NSString stringWithFormat:@"%@%@", IIFish_Prefix,NSStringFromSelector(cmd)];
     SEL fakeSel = NSSelectorFromString(fakeSelStr);
-    class_addMethod(cls, fakeSel, (IMP)_objc_msgForward , method_getTypeEncoding(orgMethod));
+    class_addMethod(cls, fakeSel,(IMP)tt , method_getTypeEncoding(orgMethod));
     class_addMethod(cls, cmd, method_getImplementation(orgMethod), method_getTypeEncoding(orgMethod));
     
     
@@ -908,7 +922,34 @@ static SEL IIFish_Property_GetSelector(Class cls, const char *propertyName) {
 
 #pragma mark-
 
+NSMethodSignature *wel_methodSignatureForSelector(id self, SEL _cmd, SEL aSelector) {
+    struct IIFishBlock_descriptor_3 *descriptor_3 =  _IIFish_Block_descriptor_3((__bridge  void *)self);
+    NSMethodSignature *ms = [NSMethodSignature signatureWithObjCTypes:descriptor_3->signature];
+    return ms;
+}
+
+void wel_forwardInvocation(id self, SEL _cmd, NSInvocation *invo) {
+    
+}
+
+
 @implementation IIFishBind
+
++ (void)load {
+    Class cls = NSClassFromString(@"NSBlock");
+    Method m = class_getInstanceMethod([NSObject class], @selector(methodSignatureForSelector:));
+    Method m1 = class_getInstanceMethod([NSObject class], @selector(forwardInvocation:));
+    
+    class_addMethod(cls, @selector(methodSignatureForSelector:), (IMP)wel_methodSignatureForSelector, method_getTypeEncoding(m));
+    class_addMethod(cls, @selector(forwardInvocation:),(IMP)wel_forwardInvocation,method_getTypeEncoding(m1));
+    
+}
+
+
+
+
+
+
 
 + (void)bindFishes:(NSArray <IIFish*> *)fishes {
     

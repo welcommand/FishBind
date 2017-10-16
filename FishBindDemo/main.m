@@ -61,7 +61,7 @@ int main(int argc, const char * argv[]) {
         
 
         
-        NSInteger (^testBlock)(CGFloat i, NSInteger j, CGTest p) = ^(CGFloat i, NSInteger j, CGTest p) {
+        NSInteger (^testBlock)(CGFloat i) = ^(CGFloat i) {
             NSLog(@"asdasdsa");
             return (NSInteger)4;
         };
@@ -70,7 +70,6 @@ int main(int argc, const char * argv[]) {
                                  [IIFish postBlock:testBlock],
                                  [IIFish observer:objectA1
                                          callBack:^(IIFishCallBack *callBack, id deadFish) {
-                                             NSLog(@"test block called  :   %@ + %@ = %@",callBack.args[0], callBack.args[1], callBack.resule);
                                              
                                          }]
                                  ]];
@@ -93,7 +92,8 @@ int main(int argc, const char * argv[]) {
 //        testMallocBlock();
         CGTest point  = (CGTest){100,200.1};
         
-        testBlock(3.1,7,point);
+        testBlock(3.1);
+        testBlock(9.1);
     }
     return 0;
 }

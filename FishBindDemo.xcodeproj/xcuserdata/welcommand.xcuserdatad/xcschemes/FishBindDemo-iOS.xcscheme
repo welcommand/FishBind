@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "2D9D7D8E1F77878B00C82428"
-               BuildableName = "FishBindDemo"
-               BlueprintName = "FishBindDemo"
+               BlueprintIdentifier = "2DBA23481F94409E005F1FE2"
+               BuildableName = "FishBindDemo-iOS.app"
+               BlueprintName = "FishBindDemo-iOS"
                ReferencedContainer = "container:FishBindDemo.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -33,9 +33,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "2D9D7D8E1F77878B00C82428"
-            BuildableName = "FishBindDemo"
-            BlueprintName = "FishBindDemo"
+            BlueprintIdentifier = "2DBA23481F94409E005F1FE2"
+            BuildableName = "FishBindDemo-iOS.app"
+            BlueprintName = "FishBindDemo-iOS"
             ReferencedContainer = "container:FishBindDemo.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -57,9 +57,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "2D9D7D8E1F77878B00C82428"
-            BuildableName = "FishBindDemo"
-            BlueprintName = "FishBindDemo"
+            BlueprintIdentifier = "2DBA23481F94409E005F1FE2"
+            BuildableName = "FishBindDemo-iOS.app"
+            BlueprintName = "FishBindDemo-iOS"
             ReferencedContainer = "container:FishBindDemo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -76,9 +76,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "2D9D7D8E1F77878B00C82428"
-            BuildableName = "FishBindDemo"
-            BlueprintName = "FishBindDemo"
+            BlueprintIdentifier = "2DBA23481F94409E005F1FE2"
+            BuildableName = "FishBindDemo-iOS.app"
+            BlueprintName = "FishBindDemo-iOS"
             ReferencedContainer = "container:FishBindDemo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
