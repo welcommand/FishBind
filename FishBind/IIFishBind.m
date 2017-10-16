@@ -205,105 +205,6 @@ static void IIFish_ClassTable_AddClass(Class cls) {
 #pragma mark- Type Encodings
 // https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
 
-static void IIFish_CpylistArg(char *d, const char *type, va_list list) {
-
-#define IIFishGetArgFromVAList(cType, type1, type2) case cType : {type1 arg = va_arg(list, type2);memcpy(d, &arg, sizeof(type1));}break;
-    
-    switch (type[0]) {
-            IIFishGetArgFromVAList('c', char, int);
-            IIFishGetArgFromVAList('i', int, int);
-            IIFishGetArgFromVAList('s', short, int);
-            IIFishGetArgFromVAList('l', long, long);
-            IIFishGetArgFromVAList('q', long long, long long);
-            IIFishGetArgFromVAList('C', unsigned char, int);
-            IIFishGetArgFromVAList('I', unsigned int, unsigned int);
-            IIFishGetArgFromVAList('S', unsigned short, int);
-            IIFishGetArgFromVAList('L', unsigned long, unsigned long);
-            IIFishGetArgFromVAList('Q', unsigned long long, unsigned long long);
-            IIFishGetArgFromVAList('f', float, double);
-            IIFishGetArgFromVAList('d', double, double);
-            IIFishGetArgFromVAList('B', BOOL, int);
-            IIFishGetArgFromVAList('*', char *, char *);
-            IIFishGetArgFromVAList('@', id, id);
-            IIFishGetArgFromVAList('#', Class, Class);
-            IIFishGetArgFromVAList( ':', SEL, SEL);
-            case '?' :
-            IIFishGetArgFromVAList('^', void *, void *);
-            case '{' : {
-                int dataP = 0;
-                for (int i = 0; i < strlen(type); i++) {
-                    if (type[i] == '{') {
-                        while (type[++i] != '=') {}
-                    } else if (type[i] == '[') {
-                        i++;
-                        int count = 0;
-                        while (isnumber(type[i])) {
-                            count = count * 10 + (type[i] - '0');
-                            i++;
-                        }
-                        if (count != 0) {
-                            //copy
-                        }
-                        i++;
-                    } else if (type[i] == '}' || type[i] == ']') {
-                    } else {
-                        IIFish_CpylistArg(d + dataP, type + i, list);
-                        NSUInteger valueSize = 0;
-                        NSGetSizeAndAlignment(&type[i], &valueSize, NULL);
-                        dataP += valueSize;
-                        //                            if (type[i] == '^') {
-                        //                                while (type[++i] == '^') {}
-                        //                                if (type[i] == '{' || type[i] == '[' || type[i] == '(') {
-                        //                                    i+=2;
-                        //                                } else {
-                        //                                    i++;
-                        //                                }
-                        //                            }
-                    }
-                }
-            }
-    }
-    
-}
-
-
-
-
-static void IIFish_TypeEncoding_Set_MethodArgs(NSInvocation *invocation, NSInteger firstArgIndex, va_list list) {
-    
-    for (NSInteger i = firstArgIndex; i < [invocation.methodSignature numberOfArguments]; i ++) {
-        const char *type = [invocation.methodSignature getArgumentTypeAtIndex:i];
-
-        NSUInteger argSize = 0;
-        NSGetSizeAndAlignment(type, &argSize, NULL);
-        char d[argSize];
-        IIFish_CpylistArg(d,type, list);
-        [invocation setArgument:d atIndex:i];
-
-    }
-}
-
-static void *IIFish_TypeEncoding_Get_ReturnValue(const char *returnValueTypeCodeing, void *returnValue) {
-    
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wint-conversion"
-    
-    switch (returnValueTypeCodeing[0]) {
-            case 'c' : {
-                char *arg = returnValue;
-                return *arg;
-            }
-            case 'i': {
-                int *arg = returnValue;
-                return *arg;
-            }
-    }
-    
-#pragma clang diagnostic pop
-    
-    return nil;
-}
-
 static id IIFish_TypeEncoding_Get_ReturnValueInBox(NSInvocation *invocation) {
     const char *argType = [invocation.methodSignature methodReturnType];
     id argBox;
@@ -567,52 +468,7 @@ static id IIFish_Block_Get_TempBlock(IIFishBlock block);
 static IIObserverAsset *IIFish_Class_Get_Asset(id object);
 static  NSString const *IIFishBlockObserverKey = @"IIFishBlockObserverKey";
 
-void* IIFishBlockFuncPtr(IIFishBlock block,...) {
-    struct IIFishBlock_descriptor_3 *descriptor_3 =  _IIFish_Block_descriptor_3(block);
-    NSMethodSignature *ms = [NSMethodSignature signatureWithObjCTypes:descriptor_3->signature];
-    va_list ap;
-    va_start(ap, block);
-    NSInvocation *invo = [NSInvocation invocationWithMethodSignature:ms];
-    IIFish_TypeEncoding_Set_MethodArgs(invo,1,ap);
-    va_end(ap);
-    
-    id tempBlock = IIFish_Block_Get_TempBlock(block);
-    if (!IIFish_Block_TypeCheck(tempBlock)) {
-        struct IIFishBlock_layout tb;
-        [(NSValue *)tempBlock getValue:&tb];
-        tempBlock = (__bridge id)&tb;
-    }
-    
-    
-    [invo invokeWithTarget:tempBlock];
-    void *returnValue = NULL;
-    if ([ms methodReturnLength] > 0) {
-        returnValue = malloc([ms methodReturnLength]);
-        [invo getReturnValue:returnValue];
-    }
-    
-    
-    IIObserverAsset *asseet = IIFish_Class_Get_Asset((__bridge id)block);
-    __block NSArray *observers;
-    NSString *key = [IIFishBlockObserverKey copy];
-    [asseet asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSSet<IIFish *> *> *observerAsset) {
-        observers = [[observerAsset objectForKey:key] allObjects];
-    }];
-    
-    
-    IIFishCallBack *callBack = [[IIFishCallBack alloc] init];
-    callBack.tager = (__bridge id)block;
-    callBack.args = IIFish_TypeEncoding_Get_MethodArgs(invo,1);
-    callBack.resule = IIFish_TypeEncoding_Get_ReturnValueInBox(invo);
-    
-    for (IIFish *fish in observers) {
-        if (fish.callBack) {
-            fish.callBack(callBack, [fish.object iiDeadFish]);
-        }
-    }
-    
-    return IIFish_TypeEncoding_Get_ReturnValue([ms methodReturnType], returnValue);
-}
+
 
 static id IIFish_Block_Get_TempBlock(IIFishBlock block) {
     return objc_getAssociatedObject((__bridge id)block, @"IIFish_Block_TempBlock");
@@ -689,13 +545,75 @@ static IIFishBlock IIFish_Block_DeepCopy(IIFishBlock block) {
     return newBlock;
 }
 
+static void IIFish_NSBlock_HookOnces(void);
+
 static void IIFish_Hook_Block(id obj) {
+    
+    IIFish_NSBlock_HookOnces();
     IIFishBlock block = (__bridge IIFishBlock)(obj);
     if (!IIFish_Block_Get_TempBlock(block)) {
         IIFish_Block_DeepCopy(block);
         block->invoke = (IIFishBlockFunc)_objc_msgForward;
     }
 }
+
+#pragma mark-
+#pragma mark- NSBlock Hook
+
+void iifish_forwardInvocation(id self, SEL _cmd, NSInvocation *invo) {
+    
+    IIFishBlock block = (__bridge void *)invo.target;
+    
+    id tempBlock = IIFish_Block_Get_TempBlock(block);
+    if (!IIFish_Block_TypeCheck(tempBlock)) {
+        struct IIFishBlock_layout tb;
+        [(NSValue *)tempBlock getValue:&tb];
+        tempBlock = (__bridge id)&tb;
+    }
+    
+    invo.target = tempBlock;
+    [invo invoke];
+    
+    IIObserverAsset *asseet = IIFish_Class_Get_Asset((__bridge id)block);
+    __block NSArray *observers;
+    NSString *key = [IIFishBlockObserverKey copy];
+    [asseet asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSSet<IIFish *> *> *observerAsset) {
+        observers = [[observerAsset objectForKey:key] allObjects];
+    }];
+    
+    
+    IIFishCallBack *callBack = [[IIFishCallBack alloc] init];
+    callBack.tager = (__bridge id)block;
+    callBack.args = IIFish_TypeEncoding_Get_MethodArgs(invo,1);
+    callBack.resule = IIFish_TypeEncoding_Get_ReturnValueInBox(invo);
+    
+    for (IIFish *fish in observers) {
+        if (fish.callBack) {
+            fish.callBack(callBack, [fish.object iiDeadFish]);
+        }
+    }
+}
+
+
+NSMethodSignature *iifish_methodSignatureForSelector(id self, SEL _cmd, SEL aSelector) {
+    struct IIFishBlock_descriptor_3 *descriptor_3 =  _IIFish_Block_descriptor_3((__bridge  void *)self);
+    return [NSMethodSignature signatureWithObjCTypes:descriptor_3->signature];
+}
+
+static void IIFish_NSBlock_HookOnces() {
+    
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        Class cls = NSClassFromString(@"NSBlock");
+        
+        Method method = class_getInstanceMethod([NSObject class], @selector(methodSignatureForSelector:));
+        class_addMethod(cls, @selector(methodSignatureForSelector:), (IMP)iifish_methodSignatureForSelector, method_getTypeEncoding(method));
+        
+        method = class_getInstanceMethod([NSObject class], @selector(forwardInvocation:));
+        class_addMethod(cls, @selector(forwardInvocation:),(IMP)iifish_forwardInvocation,method_getTypeEncoding(method));
+    });
+}
+
 
 
 #pragma mark- Method Hook
@@ -842,7 +760,7 @@ static void IIFish_Hook_Method(id object, SEL cmd) {
     Method orgMethod = class_getInstanceMethod(cls, cmd);
     NSString *fakeSelStr = [NSString stringWithFormat:@"%@%@", IIFish_Prefix,NSStringFromSelector(cmd)];
     SEL fakeSel = NSSelectorFromString(fakeSelStr);
-    class_addMethod(cls, fakeSel,(IMP)tt , method_getTypeEncoding(orgMethod));
+    class_addMethod(cls, fakeSel,(IMP)_objc_msgForward, method_getTypeEncoding(orgMethod));
     class_addMethod(cls, cmd, method_getImplementation(orgMethod), method_getTypeEncoding(orgMethod));
     
     
@@ -920,36 +838,7 @@ static SEL IIFish_Property_GetSelector(Class cls, const char *propertyName) {
     return sel;
 }
 
-#pragma mark-
-
-NSMethodSignature *wel_methodSignatureForSelector(id self, SEL _cmd, SEL aSelector) {
-    struct IIFishBlock_descriptor_3 *descriptor_3 =  _IIFish_Block_descriptor_3((__bridge  void *)self);
-    NSMethodSignature *ms = [NSMethodSignature signatureWithObjCTypes:descriptor_3->signature];
-    return ms;
-}
-
-void wel_forwardInvocation(id self, SEL _cmd, NSInvocation *invo) {
-    
-}
-
-
 @implementation IIFishBind
-
-+ (void)load {
-    Class cls = NSClassFromString(@"NSBlock");
-    Method m = class_getInstanceMethod([NSObject class], @selector(methodSignatureForSelector:));
-    Method m1 = class_getInstanceMethod([NSObject class], @selector(forwardInvocation:));
-    
-    class_addMethod(cls, @selector(methodSignatureForSelector:), (IMP)wel_methodSignatureForSelector, method_getTypeEncoding(m));
-    class_addMethod(cls, @selector(forwardInvocation:),(IMP)wel_forwardInvocation,method_getTypeEncoding(m1));
-    
-}
-
-
-
-
-
-
 
 + (void)bindFishes:(NSArray <IIFish*> *)fishes {
     

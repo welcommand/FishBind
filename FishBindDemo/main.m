@@ -70,7 +70,7 @@ int main(int argc, const char * argv[]) {
                                  [IIFish postBlock:testBlock],
                                  [IIFish observer:objectA1
                                          callBack:^(IIFishCallBack *callBack, id deadFish) {
-                                             
+                                             NSLog(@"%@",callBack);
                                          }]
                                  ]];
         
