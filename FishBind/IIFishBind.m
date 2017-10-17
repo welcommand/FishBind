@@ -12,13 +12,16 @@
 #import <objc/message.h>
 
 //todo
+//super class fa
+//super property
+//super method
 
 // remove
 //kvo
 
 // lock
 
-static NSString const* IIFish_Prefix = @"IIFish_";
+static char const* IIFish_Prefix = "IIFish_";
 static char const* IIWatch_Prefix = "IIWatch_";
 
 typedef NS_OPTIONS(NSInteger, IIFishFlage) {
@@ -32,7 +35,7 @@ typedef NS_OPTIONS(NSInteger, IIFishFlage) {
 
 @implementation IIFishCallBack
 - (NSString *)description {
-    return [NSString stringWithFormat:@"tager = %@\nselector = %@\nargs = %@\nresule = %@",_tager,_selector,_args,_resule];
+    return [NSString stringWithFormat:@"tager = %@\nselector = %@\nargs = %@\nresule = %@", _tager, _selector, _args, _resule];
 }
 @end
 
@@ -74,7 +77,6 @@ typedef NS_OPTIONS(NSInteger, IIFishFlage) {
 }
 @end
 
-
 #pragma mark-
 #pragma mark- Dead Fish
 
@@ -90,7 +92,8 @@ typedef NS_OPTIONS(NSInteger, IIFishFlage) {
 - (void)forwardInvocation:(NSInvocation *)invocation {
     invocation.target = _orgObject;
     
-    SEL orgSel =NSSelectorFromString( [NSString stringWithFormat:@"%@%@",IIFish_Prefix,NSStringFromSelector(invocation.selector)]);
+    
+    SEL orgSel =NSSelectorFromString( [NSString stringWithFormat:@"%s%s",IIFish_Prefix, sel_getName(invocation.selector)]);
     Method method = class_getInstanceMethod(object_getClass(_orgObject), orgSel);
     if (method) {
         invocation.selector = orgSel;
@@ -109,7 +112,8 @@ typedef NS_OPTIONS(NSInteger, IIFishFlage) {
 
 - (id)iiDeadFish {
     Class cls = object_getClass(self);
-    if (![NSStringFromClass(cls) hasPrefix:[IIFish_Prefix copy]]) {
+    
+    if (strncmp(class_getName(cls),IIFish_Prefix,strlen(IIFish_Prefix))) {
         return self;
     }
     IIDeadFish *deadFish = objc_getAssociatedObject(self, _cmd);
@@ -265,24 +269,6 @@ argBox = @(arg);\
     return argBox;
 }
 
-// code from
-// https://github.com/bang590/JSPatch/blob/master/JSPatch/JPEngine.m
-// line 975
-
-static IMP IIFish_msgForward(const char *methodTypes) {
-    IMP msgForwardIMP = _objc_msgForward;
-#if !defined(__arm64__)
-    if (methodTypes[0] == '{') {
-        NSMethodSignature *methodSignature = [NSMethodSignature signatureWithObjCTypes:methodTypes];
-        if ([methodSignature.debugDescription rangeOfString:@"is special struct return? YES"].location != NSNotFound) {
-            msgForwardIMP = (IMP)_objc_msgForward_stret;
-        }
-    }
-#endif
-    return msgForwardIMP;
-}
-
-
 static NSArray *IIFish_TypeEncoding_Get_MethodArgs(NSInvocation *invocation, NSInteger beginIndex) {
     
     NSMutableArray *args = [NSMutableArray new];
@@ -349,12 +335,29 @@ argBox = @(arg);\
     return args;
 }
 
+#pragma mark-
+#pragma mark- msgForward
+
+// code from
+// https://github.com/bang590/JSPatch/blob/master/JSPatch/JPEngine.m
+// line 975
+
+static IMP IIFish_msgForward(const char *methodTypes) {
+    IMP msgForwardIMP = _objc_msgForward;
+#if !defined(__arm64__)
+    if (methodTypes[0] == '{') {
+        NSMethodSignature *methodSignature = [NSMethodSignature signatureWithObjCTypes:methodTypes];
+        if ([methodSignature.debugDescription rangeOfString:@"is special struct return? YES"].location != NSNotFound) {
+            msgForwardIMP = (IMP)_objc_msgForward_stret;
+        }
+    }
+#endif
+    return msgForwardIMP;
+}
+
 
 #pragma mark-
 #pragma mark- Block Hook
-
-#pragma mark- opensource
-
 //code from
 //https://opensource.apple.com/source/libclosure/libclosure-67
 
@@ -540,7 +543,6 @@ void iifish_forwardInvocation(id self, SEL _cmd, NSInvocation *invo) {
     }
 }
 
-
 NSMethodSignature *iifish_methodSignatureForSelector(id self, SEL _cmd, SEL aSelector) {
     struct IIFishBlock_descriptor_3 *descriptor_3 =  _IIFish_Block_descriptor_3((__bridge  void *)self);
     return [NSMethodSignature signatureWithObjCTypes:descriptor_3->signature];
@@ -575,10 +577,35 @@ static IIObserverAsset *IIFish_Class_Get_Asset(id object) {
     return asset;
 }
 
+void IIFish_Object_HookForwardFunc(id obj, IMP func, const char *funcPrefix) {
+    Class cls = object_getClass(obj);
+    SEL forwardSel = @selector(forwardInvocation:);
+    const char *forwardTypeEncoding = method_getTypeEncoding(class_getInstanceMethod([NSObject class], forwardSel));
+    
+    Method forward  = class_getInstanceMethod(cls, forwardSel);
+    
+    if (!forward) {
+        class_addMethod(cls, forwardSel, func, forwardTypeEncoding);
+    } else if (method_getImplementation(forward) != func){
+        char *funcName = malloc(strlen(funcPrefix) + strlen("forwardInvocation:"));
+        strcpy(funcName, funcPrefix);
+        strcat(funcName, funcPrefix);
+        
+        SEL funcSel = sel_getUid(funcName);
+        free(funcName);
+        
+        Method newForward = class_getInstanceMethod(cls,funcSel);
+        if (!newForward) {
+            class_addMethod(cls, funcSel, method_getImplementation(forward), forwardTypeEncoding);
+            method_setImplementation(forward, func);
+        }
+    }
+}
+
 void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
     Class cls = object_getClass(self);
     SEL fakeSel = anInvocation.selector;
-    NSString *orgSelString = [NSString stringWithFormat:@"%@%@", IIFish_Prefix,NSStringFromSelector(fakeSel)];
+    NSString *orgSelString = [NSString stringWithFormat:@"%s%s", IIFish_Prefix,sel_getName(fakeSel)];
     anInvocation.selector = NSSelectorFromString(orgSelString);
     [anInvocation invoke];
     
@@ -636,15 +663,21 @@ void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
 }
 
 static BOOL IIFish_Class_IsSafeObject(id object) {
-    return [object class] == object_getClass(object) ||
-    [NSStringFromClass(object_getClass(object)) hasPrefix:[IIFish_Prefix copy]];
+    
+    return [object class] == object_getClass(object) || strncmp(class_getName(object_getClass(object)),IIFish_Prefix,strlen(IIFish_Prefix));
 }
 
-static Class IIFish_Class_CreateFakeSubClass(id object) {
+static Class IIFish_Class_CreateFakeSubClass(id object, const char *classPrefix) {
     Class orgCls = object_getClass(object);
-    NSString *newClsStr = [NSString stringWithFormat:@"%@%@",IIFish_Prefix,NSStringFromClass(orgCls)];
     
-    Class newCls = objc_allocateClassPair(orgCls, [newClsStr UTF8String], 0);
+    const char *orgClassName = class_getName(orgCls);
+    char *className = malloc(strlen(orgClassName) + strlen(classPrefix));
+    strcpy(className, classPrefix);
+    strcat(className, orgClassName);
+    
+    Class newCls = objc_allocateClassPair(orgCls, className, 0);
+    
+    free(className);
     
     if (newCls == Nil) {
         return Nil;
@@ -661,8 +694,6 @@ static Class IIFish_Class_CreateFakeSubClass(id object) {
     
     class_addMethod(newCls, @selector(class), imp_class, IIFish_Method_Type(@selector(class)));
     class_addMethod(newCls, @selector(superclass), imp_superClass, IIFish_Method_Type(@selector(superclass)));
-    class_addMethod(newCls, @selector(forwardInvocation:), (IMP)fakeForwardInvocation, IIFish_Method_Type(@selector(forwardInvocation:)));
-    class_addIvar(newCls, "_IIFish_Bind", sizeof(BOOL), log2(sizeof(BOOL)), @encode(BOOL));
     objc_registerClassPair(newCls);
     
     return newCls;
@@ -675,9 +706,10 @@ static void IIFish_Hook_Class(id object) {
     }
     
     if (!IIFish_ClassTable_ContainClass([object class])) {
-        Class newCls = IIFish_Class_CreateFakeSubClass(object);
+        Class newCls = IIFish_Class_CreateFakeSubClass(object, IIFish_Prefix);
         IIFish_ClassTable_AddClass([object class]);
         object_setClass(object, newCls);
+        IIFish_Object_HookForwardFunc(object, (IMP)fakeForwardInvocation, IIFish_Prefix);
     }
 }
 
@@ -685,7 +717,7 @@ static void IIFish_Hook_Method(id object, SEL cmd) {
     
     Class cls = object_getClass(object);
     Method orgMethod = class_getInstanceMethod(cls, cmd);
-    NSString *fakeSelStr = [NSString stringWithFormat:@"%@%@", IIFish_Prefix,NSStringFromSelector(cmd)];
+    NSString *fakeSelStr = [NSString stringWithFormat:@"%s%s", IIFish_Prefix, sel_getName(cmd)];
     SEL fakeSel = NSSelectorFromString(fakeSelStr);
     const char *methodType = method_getTypeEncoding(orgMethod);
     class_addMethod(cls, fakeSel,IIFish_msgForward(methodType), methodType);
@@ -841,7 +873,6 @@ void IIWatch_forwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
         [self performSelector:forwardSel withObject:anInvocation];
 #pragma clang diagnostic pop
-        
     }
 }
 
@@ -850,22 +881,15 @@ void IIWatch_forwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
 + (void)watchObject:(id)obj containSuper:(BOOL)contain callBack:(IIWatchCallBackBlock)callBack {
     
     IIFish_Lock(^{
-        Class cls = [obj class];
         
-        Method forward = class_getInstanceMethod(cls, @selector(forwardInvocation:));
-        if (!forward) {
-            class_addMethod(cls, @selector(forwardInvocation:), (IMP)IIWatch_forwardInvocation, method_getTypeEncoding(forward));
-        } else if (method_getImplementation(forward) != (IMP)IIWatch_forwardInvocation) {
-            SEL forwardSel = sel_getUid("IIWatch_forwardInvocation:");
-            Method forwardFake = class_getInstanceMethod(cls, forwardSel);
-            if (!forwardFake) {
-                class_addMethod(cls, @selector(forwardInvocation:), method_getImplementation(forward), method_getTypeEncoding(forward));
-                method_setImplementation(forward, (IMP)IIWatch_forwardInvocation);
-            }
+        if (!object_isClass(obj)) {
+            IIFish_Hook_Class(obj);
         }
         
+        IIFish_Object_HookForwardFunc(obj, (IMP)IIWatch_forwardInvocation, IIWatch_Prefix);
         objc_setAssociatedObject(obj, "IIWatchCallBack", callBack, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         
+        Class cls = [obj class];
         do {
             unsigned int count;
             Method *methods = class_copyMethodList(cls, &count);
@@ -880,6 +904,7 @@ void IIWatch_forwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
                 });
                 
                 if ([blackList containsObject:NSStringFromSelector(method_getName(m))]) {
+                    method_setImplementation(m, (IMP)IIWatch_forwardInvocation);
                     continue;
                 }
                 
@@ -897,7 +922,7 @@ void IIWatch_forwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
             }
             
             free(methods);
-        }while((cls = class_getSuperclass(cls)) && contain);
+        } while((cls = class_getSuperclass(cls)) && contain);
         
     });
 }

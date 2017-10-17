@@ -8,37 +8,40 @@
 
 #import "ViewController.h"
 #import "IIFishBind.h"
+#import <objc/runtime.h>
 
 @interface ViewController ()
 
 @end
 
+
 @implementation ViewController
+
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+
     
-    void (^testBlock)(id f, NSInteger i, NSInteger j) = ^(id f, NSInteger i, NSInteger j) {
-        NSLog(@"asdasd");
-    };
-
-    [IIFishBind bindFishes:@[[IIFish postBlock:testBlock],
-                             [IIFish observer:self callBack:^(IIFishCallBack *callBack, id deadFish) {
-    }]]];
-    testBlock(self,3,5);
-}
-
-- (void)forwardInvocation:(NSInvocation *)anInvocation {
+    //[self doesNotRecognizeSelector:<#(SEL)#>]
     
+    
+//    [IIWatchmen watchObject:self containSuper:YES callBack:^(IIFishCallBack *callBack) {
+//        NSLog(@"====%@====", callBack.selector);
+//    }];
+    
+    
+//    void (^testBlock)(id f, NSInteger i, NSInteger j) = ^(id f, NSInteger i, NSInteger j) {
+//        NSLog(@"asdasd");
+//    };
+//
+//    [IIFishBind bindFishes:@[[IIFish postBlock:testBlock],
+//                             [IIFish observer:self callBack:^(IIFishCallBack *callBack, id deadFish) {
+//    }]]];
+//    testBlock(self,3,5);
 }
 
-
-- (void)test:(NSInteger)i {
-}
-
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
 }
 
 
