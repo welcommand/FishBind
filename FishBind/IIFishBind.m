@@ -253,6 +253,8 @@ argBox = @(arg);\
             [invocation getReturnValue:&arg];
             argBox = [NSValue value:arg withObjCType:argType];
         } break;
+        case 'v':
+            break;
         default: {
             void *arg;
             [invocation getReturnValue:&arg];
@@ -262,6 +264,24 @@ argBox = @(arg);\
     
     return argBox;
 }
+
+// code from
+// https://github.com/bang590/JSPatch/blob/master/JSPatch/JPEngine.m
+// line 975
+
+static IMP IIFish_msgForward(const char *methodTypes) {
+    IMP msgForwardIMP = _objc_msgForward;
+#if !defined(__arm64__)
+    if (methodTypes[0] == '{') {
+        NSMethodSignature *methodSignature = [NSMethodSignature signatureWithObjCTypes:methodTypes];
+        if ([methodSignature.debugDescription rangeOfString:@"is special struct return? YES"].location != NSNotFound) {
+            msgForwardIMP = (IMP)_objc_msgForward_stret;
+        }
+    }
+#endif
+    return msgForwardIMP;
+}
+
 
 static NSArray *IIFish_TypeEncoding_Get_MethodArgs(NSInvocation *invocation, NSInteger beginIndex) {
     
@@ -321,11 +341,9 @@ argBox = @(arg);\
                 argBox = (__bridge id)arg;
             }
         }
-        
         if (argBox) {
             [args addObject:argBox];
         }
-        
     }
     
     return args;
@@ -477,12 +495,12 @@ static IIFishBlock IIFish_Block_DeepCopy(IIFishBlock block) {
 static void IIFish_NSBlock_HookOnces(void);
 
 static void IIFish_Hook_Block(id obj) {
-    
     IIFish_NSBlock_HookOnces();
     IIFishBlock block = (__bridge IIFishBlock)(obj);
     if (!IIFish_Block_Get_TempBlock(block)) {
         IIFish_Block_DeepCopy(block);
-        block->invoke = (IIFishBlockFunc)_objc_msgForward;
+        struct IIFishBlock_descriptor_3 *descriptor_3 =  _IIFish_Block_descriptor_3(block);
+        block->invoke = (void *)IIFish_msgForward(descriptor_3->signature);
     }
 }
 
@@ -542,32 +560,11 @@ static void IIFish_NSBlock_HookOnces() {
     });
 }
 
-
-
 #pragma mark- Method Hook
 #pragma mark-
 
 static SEL IIFish_Property_GetSelector(Class cls, const char *propertyName);
 static SEL IIFish_Property_SetSelector(Class cls, const char *propertyName);
-
-// code from
-// https://github.com/bang590/JSPatch/blob/master/JSPatch/JPEngine.m
-// line 975
-
-static IMP IIFish_msgForward(const char *methodTypes) {
-    IMP msgForwardIMP = _objc_msgForward;
-#if !defined(__arm64__)
-    if (methodTypes[0] == '{') {
-        NSMethodSignature *methodSignature = [NSMethodSignature signatureWithObjCTypes:methodTypes];
-        if ([methodSignature.debugDescription rangeOfString:@"is special struct return? YES"].location != NSNotFound) {
-            msgForwardIMP = (IMP)_objc_msgForward_stret;
-        }
-    }
-#endif
-    return msgForwardIMP;
-}
-
-
 
 static IIObserverAsset *IIFish_Class_Get_Asset(id object) {
     IIObserverAsset *asset = objc_getAssociatedObject(object, "IIFish_Class_Get_Asset");
@@ -908,6 +905,5 @@ void IIWatch_forwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
 + (void)watchClass:(Class)cls containSuper:(BOOL)contain callBack:(IIWatchCallBackBlock)callBack {
     [self watchObject:objc_getMetaClass(class_getName(cls)) containSuper:contain callBack:callBack];
 }
-
 
 @end
