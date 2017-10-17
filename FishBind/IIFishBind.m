@@ -12,7 +12,6 @@
 #import <objc/message.h>
 
 //todo
-//super class fa
 //super property
 //super method
 
@@ -22,7 +21,6 @@
 // lock
 
 static char const* IIFish_Prefix = "IIFish_";
-static char const* IIWatch_Prefix = "IIWatch_";
 
 typedef NS_OPTIONS(NSInteger, IIFishFlage) {
     IIFish_IsBlock = (1 << 2),
@@ -577,31 +575,6 @@ static IIObserverAsset *IIFish_Class_Get_Asset(id object) {
     return asset;
 }
 
-void IIFish_Object_HookForwardFunc(id obj, IMP func, const char *funcPrefix) {
-    Class cls = object_getClass(obj);
-    SEL forwardSel = @selector(forwardInvocation:);
-    const char *forwardTypeEncoding = method_getTypeEncoding(class_getInstanceMethod([NSObject class], forwardSel));
-    
-    Method forward  = class_getInstanceMethod(cls, forwardSel);
-    
-    if (!forward) {
-        class_addMethod(cls, forwardSel, func, forwardTypeEncoding);
-    } else if (method_getImplementation(forward) != func){
-        char *funcName = malloc(strlen(funcPrefix) + strlen("forwardInvocation:"));
-        strcpy(funcName, funcPrefix);
-        strcat(funcName, funcPrefix);
-        
-        SEL funcSel = sel_getUid(funcName);
-        free(funcName);
-        
-        Method newForward = class_getInstanceMethod(cls,funcSel);
-        if (!newForward) {
-            class_addMethod(cls, funcSel, method_getImplementation(forward), forwardTypeEncoding);
-            method_setImplementation(forward, func);
-        }
-    }
-}
-
 void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
     Class cls = object_getClass(self);
     SEL fakeSel = anInvocation.selector;
@@ -694,6 +667,8 @@ static Class IIFish_Class_CreateFakeSubClass(id object, const char *classPrefix)
     
     class_addMethod(newCls, @selector(class), imp_class, IIFish_Method_Type(@selector(class)));
     class_addMethod(newCls, @selector(superclass), imp_superClass, IIFish_Method_Type(@selector(superclass)));
+    class_addMethod(newCls, @selector(forwardInvocation:), (IMP)fakeForwardInvocation, IIFish_Method_Type(@selector(forwardInvocation:)));
+
     objc_registerClassPair(newCls);
     
     return newCls;
@@ -709,7 +684,6 @@ static void IIFish_Hook_Class(id object) {
         Class newCls = IIFish_Class_CreateFakeSubClass(object, IIFish_Prefix);
         IIFish_ClassTable_AddClass([object class]);
         object_setClass(object, newCls);
-        IIFish_Object_HookForwardFunc(object, (IMP)fakeForwardInvocation, IIFish_Prefix);
     }
 }
 
@@ -840,95 +814,4 @@ static SEL IIFish_Property_GetSelector(Class cls, const char *propertyName) {
 + (void)removeFish:(NSArray <IIFish *> *)fishes {
     
 }
-@end
-
-
-void IIWatch_forwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
-    const char *orgSelName = sel_getName(anInvocation.selector);
-    char *newSelName = malloc(strlen(orgSelName) + strlen(IIWatch_Prefix));
-    strcpy(newSelName, IIWatch_Prefix);
-    strcat(newSelName, orgSelName);
-    
-    anInvocation.selector = sel_getUid(newSelName);
-    free(newSelName);
-    
-    [anInvocation invoke];
-    
-    IIWatchCallBackBlock callBackBlock = objc_getAssociatedObject(self, "IIWatchCallBack");
-    
-    if (callBackBlock) {
-        IIFishCallBack *callBack = [[IIFishCallBack alloc] init];
-        callBack.tager = self;
-        callBack.selector = NSStringFromSelector(anInvocation.selector);
-        callBack.args = IIFish_TypeEncoding_Get_MethodArgs(anInvocation,2);
-        callBack.resule = IIFish_TypeEncoding_Get_ReturnValueInBox(anInvocation);
-        callBackBlock(callBack);
-    }
-    
-    SEL forwardSel = sel_getUid("IIWatch_forwardInvocation:");
-    Method forwardOrg = class_getInstanceMethod(object_getClass(self), forwardSel);
-    if (forwardOrg) {
-        
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
-        [self performSelector:forwardSel withObject:anInvocation];
-#pragma clang diagnostic pop
-    }
-}
-
-@implementation IIWatchmen
-
-+ (void)watchObject:(id)obj containSuper:(BOOL)contain callBack:(IIWatchCallBackBlock)callBack {
-    
-    IIFish_Lock(^{
-        
-        if (!object_isClass(obj)) {
-            IIFish_Hook_Class(obj);
-        }
-        
-        IIFish_Object_HookForwardFunc(obj, (IMP)IIWatch_forwardInvocation, IIWatch_Prefix);
-        objc_setAssociatedObject(obj, "IIWatchCallBack", callBack, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-        
-        Class cls = [obj class];
-        do {
-            unsigned int count;
-            Method *methods = class_copyMethodList(cls, &count);
-            
-            for (unsigned int i = 0; i < count; i++) {
-                Method m = methods[i];
-                
-                static NSSet *blackList;
-                static dispatch_once_t onceToken;
-                dispatch_once(&onceToken, ^{
-                    blackList = [NSSet setWithObjects:@"retain", @"release", @"autorelease", @"dealloc", @"forwardInvocation:", nil];
-                });
-                
-                if ([blackList containsObject:NSStringFromSelector(method_getName(m))]) {
-                    method_setImplementation(m, (IMP)IIWatch_forwardInvocation);
-                    continue;
-                }
-                
-                const char *orgSelName = sel_getName(method_getName(m));
-                char *newSelName = malloc(strlen(orgSelName) + strlen(IIWatch_Prefix));
-                strcpy(newSelName, IIWatch_Prefix);
-                strcat(newSelName, orgSelName);
-                
-                if (!class_getInstanceMethod(cls, sel_getUid(newSelName))) {
-                    const char *methodType = method_getTypeEncoding(m);
-                    class_addMethod(cls,sel_getUid(newSelName), method_getImplementation(m), methodType);
-                    method_setImplementation(m, IIFish_msgForward(methodType));
-                }
-                free(newSelName);
-            }
-            
-            free(methods);
-        } while((cls = class_getSuperclass(cls)) && contain);
-        
-    });
-}
-
-+ (void)watchClass:(Class)cls containSuper:(BOOL)contain callBack:(IIWatchCallBackBlock)callBack {
-    [self watchObject:objc_getMetaClass(class_getName(cls)) containSuper:contain callBack:callBack];
-}
-
 @end
