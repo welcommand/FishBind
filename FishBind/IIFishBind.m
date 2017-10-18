@@ -409,14 +409,8 @@ static struct IIFishBlock_descriptor_3 * _IIFish_Block_descriptor_3(IIFishBlock 
 
 #pragma mark-
 
-typedef void (*IIFishBlockFunc) (void*, ...);
-
-static BOOL IIFish_Block_TypeCheck(id object);
-static id IIFish_Block_Get_TempBlock(IIFishBlock block);
 static IIObserverAsset *IIFish_Class_Get_Asset(id object);
 static  NSString const *IIFishBlockObserverKey = @"IIFishBlockObserverKey";
-
-
 
 static id IIFish_Block_Get_TempBlock(IIFishBlock block) {
     return objc_getAssociatedObject((__bridge id)block, @"IIFish_Block_TempBlock");
@@ -453,7 +447,7 @@ void IIFish_Block_disposeFunc(const void * block_Layout) {
     }
 }
 
-static void IIFish_Block_HookDisposeFuncOnces(IIFishBlock block) {
+static void IIFish_Block_HookDisposeFunc(IIFishBlock block) {
     if (block->flags & IIFishBLOCK_HAS_COPY_DISPOSE) {
         struct IIFishBlock_descriptor_2 *descriptor_2  = _IIFish_Block_descriptor_2(block);
         if (descriptor_2->dispose != IIFish_Block_disposeFunc) {
@@ -465,21 +459,15 @@ static void IIFish_Block_HookDisposeFuncOnces(IIFishBlock block) {
     }
 }
 
-static BOOL IIFish_Block_TypeCheck(id object) {
-    return [object isKindOfClass:NSClassFromString(@"NSBlock")];
-}
-
-static IIFishBlock IIFish_Block_DeepCopy(IIFishBlock block) {
-    
-    IIFishBlock newBlock = NULL;
+static void IIFish_Block_DeepCopy(IIFishBlock block) {
     struct IIFishBlock_descriptor_2 *descriptor_2 = _IIFish_Block_descriptor_2(block);
     if (descriptor_2) {
-        newBlock = malloc(block->descriptor->size);
-        if (!newBlock) return nil;
+        IIFishBlock newBlock = malloc(block->descriptor->size);
+        if (!newBlock) return;
         memmove(newBlock, block, block->descriptor->size);
         descriptor_2->copy(newBlock, block);
         IIFish_Block_Set_TempMallocBlock(block, newBlock);
-        IIFish_Block_HookDisposeFuncOnces(block);
+        IIFish_Block_HookDisposeFunc(block);
     } else {
         struct IIFishBlock_layout block_layout;
         block_layout.isa = block->isa;
@@ -489,31 +477,17 @@ static IIFishBlock IIFish_Block_DeepCopy(IIFishBlock block) {
         block_layout.descriptor = block->descriptor;
         IIFish_Block_Set_TempGlobalBlock(block, block_layout);
     }
-    
-    return newBlock;
-}
-
-static void IIFish_NSBlock_HookOnces(void);
-
-static void IIFish_Hook_Block(id obj) {
-    IIFish_NSBlock_HookOnces();
-    IIFishBlock block = (__bridge IIFishBlock)(obj);
-    if (!IIFish_Block_Get_TempBlock(block)) {
-        IIFish_Block_DeepCopy(block);
-        struct IIFishBlock_descriptor_3 *descriptor_3 =  _IIFish_Block_descriptor_3(block);
-        block->invoke = (void *)IIFish_msgForward(descriptor_3->signature);
-    }
 }
 
 #pragma mark-
 #pragma mark- NSBlock Hook
 
-void iifish_forwardInvocation(id self, SEL _cmd, NSInvocation *invo) {
+void iifish_block_forwardInvocation(id self, SEL _cmd, NSInvocation *invo) {
     
     IIFishBlock block = (__bridge void *)invo.target;
     
     id tempBlock = IIFish_Block_Get_TempBlock(block);
-    if (!IIFish_Block_TypeCheck(tempBlock)) {
+    if (![tempBlock isKindOfClass:NSClassFromString(@"NSBlock")]) {
         struct IIFishBlock_layout tb;
         [(NSValue *)tempBlock getValue:&tb];
         tempBlock = (__bridge id)&tb;
@@ -541,7 +515,7 @@ void iifish_forwardInvocation(id self, SEL _cmd, NSInvocation *invo) {
     }
 }
 
-NSMethodSignature *iifish_methodSignatureForSelector(id self, SEL _cmd, SEL aSelector) {
+NSMethodSignature *iifish_block_methodSignatureForSelector(id self, SEL _cmd, SEL aSelector) {
     struct IIFishBlock_descriptor_3 *descriptor_3 =  _IIFish_Block_descriptor_3((__bridge  void *)self);
     return [NSMethodSignature signatureWithObjCTypes:descriptor_3->signature];
 }
@@ -552,12 +526,23 @@ static void IIFish_NSBlock_HookOnces() {
     dispatch_once(&onceToken, ^{
         Class cls = NSClassFromString(@"NSBlock");
         
-        Method method = class_getInstanceMethod([NSObject class], @selector(methodSignatureForSelector:));
-        class_addMethod(cls, @selector(methodSignatureForSelector:), (IMP)iifish_methodSignatureForSelector, method_getTypeEncoding(method));
+#define IIFish_StrongHookMethod(selector, func) {Method method = class_getInstanceMethod([NSObject class], selector); \
+        BOOL success = class_addMethod(cls, selector, (IMP)func, method_getTypeEncoding(method)); \
+if (!success) { class_replaceMethod(cls, selector, (IMP)func, method_getTypeEncoding(method));}}
         
-        method = class_getInstanceMethod([NSObject class], @selector(forwardInvocation:));
-        class_addMethod(cls, @selector(forwardInvocation:),(IMP)iifish_forwardInvocation,method_getTypeEncoding(method));
+        IIFish_StrongHookMethod(@selector(methodSignatureForSelector:), iifish_block_methodSignatureForSelector);
+        IIFish_StrongHookMethod(@selector(forwardInvocation:), iifish_block_forwardInvocation);
     });
+}
+
+static void IIFish_Hook_Block(id obj) {
+    IIFish_NSBlock_HookOnces();
+    IIFishBlock block = (__bridge IIFishBlock)(obj);
+    if (!IIFish_Block_Get_TempBlock(block)) {
+        IIFish_Block_DeepCopy(block);
+        struct IIFishBlock_descriptor_3 *descriptor_3 =  _IIFish_Block_descriptor_3(block);
+        block->invoke = (void *)IIFish_msgForward(descriptor_3->signature);
+    }
 }
 
 #pragma mark- Method Hook
