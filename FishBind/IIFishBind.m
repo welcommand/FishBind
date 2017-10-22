@@ -169,40 +169,23 @@ static void IIFish_Lock(dispatch_block_t block) {
     pthread_mutex_unlock(&mutex);
 }
 
-#pragma mark-
-#pragma mark- class table
+#pragma mark- runtime add
 
-static dispatch_queue_t IIFish_ClassTable_Queue() {
-    static dispatch_queue_t classTableQueue = nil;
-    if (!classTableQueue) {
-        classTableQueue = dispatch_queue_create("com.IIFishClassTableQueue.FishBind", DISPATCH_QUEUE_CONCURRENT);
+static Method IIFish_Class_getInstanceMethodWithoutSuper(Class cls, SEL sel) {
+    unsigned int count;
+    Method *methods = class_copyMethodList(cls, &count);
+    Method m = NULL;
+    for (unsigned int i = 0; i < count; i ++) {
+        if (method_getName(methods[i]) == sel) {
+            m = methods[i];
+        }
     }
-    return classTableQueue;
+
+    free(methods);
+    return m;
 }
 
-static NSMutableSet* IIFish_ClassTable() {
-    static NSMutableSet *classTable;
-    if (!classTable) {
-        classTable = [NSMutableSet new];
-    }
-    return classTable;
-}
 
-static BOOL IIFish_ClassTable_ContainClass(Class cls) {
-    __block BOOL contain;
-    dispatch_sync(IIFish_ClassTable_Queue(), ^{
-        NSMutableSet *classTable = IIFish_ClassTable();
-        contain = [classTable containsObject:cls];
-    });
-    return contain;
-}
-
-static void IIFish_ClassTable_AddClass(Class cls) {
-    dispatch_barrier_async(IIFish_ClassTable_Queue(), ^{
-        NSMutableSet *classTable = IIFish_ClassTable();
-        [classTable addObject:cls];
-    });
-}
 #pragma mark- Type Encodings
 // https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
 
