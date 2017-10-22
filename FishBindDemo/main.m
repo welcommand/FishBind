@@ -12,14 +12,6 @@
 #import "IITestObjectA.h"
 #import "IITestObjectB.h"
 
-struct CGTest {
-    NSInteger i;
-    CGFloat j;
-};
-typedef struct CGTest CGTest;
-//{CGTest={CGPoint=dd}dq[30c]}
-
-
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
         

@@ -32,7 +32,7 @@ typedef void(^IIFishCallBackBlock) (IIFishCallBack *callBack, id deadFish);
 + (instancetype)post:(id)object selector:(SEL)selector;
 + (instancetype)observer:(id)object callBack:(IIFishCallBackBlock)callBack;
 
-// bind a block,  using observer:callBack: to observer
+// bind a block,  using observer:callBack: to observe
 + (instancetype)postBlock:(id)blockObject;
 
 // bilateral bind
@@ -43,5 +43,4 @@ typedef void(^IIFishCallBackBlock) (IIFishCallBack *callBack, id deadFish);
 
 @interface IIFishBind : NSObject
 + (void)bindFishes:(NSArray <IIFish*> *)fishes;
-+ (void)removeFish:(IIFish *)fishes;
 @end
