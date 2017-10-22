@@ -198,7 +198,7 @@ IIFishCallBack 会把完整的信息交给你。IIFishCallBack结构如下
       deadFish.a = B.b - C.c;
 	}]，
 		[IIFish both:C selector:@selector(setC:) callBack:^(IIFishCallBack *callBack, id deadFish) {
-      deadFish.c = B.b + A.a;
+      deadFish.c = B.b - A.a;
 	}]，
 	[IIFish both:B selector:@selector(setB:) callBack:^(IIFishCallBack *callBack, id deadFish) {
       deadFish.b = A.a + C.c;
