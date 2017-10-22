@@ -12,13 +12,9 @@
 #import <objc/message.h>
 
 //todo
-//super property
-//super method
 
 // remove
 //kvo
-
-// lock
 
 static char const* IIFish_Prefix = "IIFish_";
 
@@ -157,18 +153,6 @@ typedef NS_OPTIONS(NSInteger, IIFishFlage) {
 }
 @end
 
-
-#pragma mark-
-#pragma mark- lock
-
-static void IIFish_Lock(dispatch_block_t block) {
-    static pthread_mutex_t mutex;
-    pthread_mutex_init(&mutex, NULL);
-    pthread_mutex_lock(&mutex);
-    block();
-    pthread_mutex_unlock(&mutex);
-}
-
 #pragma mark- runtime add
 
 static Method IIFish_Class_getInstanceMethodWithoutSuper(Class cls, SEL sel) {
@@ -180,7 +164,7 @@ static Method IIFish_Class_getInstanceMethodWithoutSuper(Class cls, SEL sel) {
             m = methods[i];
         }
     }
-
+    
     free(methods);
     return m;
 }
@@ -213,32 +197,32 @@ argBox = @(arg);\
             IIFish_GetReturnValueInBox('f', float)
             IIFish_GetReturnValueInBox('d', double)
             IIFish_GetReturnValueInBox('B', BOOL)
-        case '*': {
-            char *arg;
-            [invocation getReturnValue:&arg];
-            argBox = [[NSString alloc] initWithUTF8String:arg];
-        } break;
-        case '@': {
-            id arg;
-            [invocation getReturnValue:&arg];
-            argBox = arg;
-        } break;
-        case '#': {
-            Class arg;
-            [invocation getReturnValue:&arg];
-            argBox = NSStringFromClass(arg);
-        } break;
-        case ':': {
-            SEL arg;
-            [invocation getReturnValue:&arg];
-            argBox = NSStringFromSelector(arg);
-        } break;
-        case '{': {
-            void *arg;
-            [invocation getReturnValue:&arg];
-            argBox = [NSValue value:arg withObjCType:argType];
-        } break;
-        case 'v':
+            case '*': {
+                char *arg;
+                [invocation getReturnValue:&arg];
+                argBox = [[NSString alloc] initWithUTF8String:arg];
+            } break;
+            case '@': {
+                id arg;
+                [invocation getReturnValue:&arg];
+                argBox = arg;
+            } break;
+            case '#': {
+                Class arg;
+                [invocation getReturnValue:&arg];
+                argBox = NSStringFromClass(arg);
+            } break;
+            case ':': {
+                SEL arg;
+                [invocation getReturnValue:&arg];
+                argBox = NSStringFromSelector(arg);
+            } break;
+            case '{': {
+                void *arg;
+                [invocation getReturnValue:&arg];
+                argBox = [NSValue value:arg withObjCType:argType];
+            } break;
+            case 'v':
             break;
         default: {
             void *arg;
@@ -277,31 +261,31 @@ argBox = @(arg);\
                 IIFish_GetArgumentValueInBox('f', float)
                 IIFish_GetArgumentValueInBox('d', double)
                 IIFish_GetArgumentValueInBox('B', BOOL)
-            case '*': {
-                char *arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = [[NSString alloc] initWithUTF8String:arg];
-            } break;
-            case '@': {
-                id arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = arg;
-            } break;
-            case '#': {
-                Class arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = NSStringFromClass(arg);
-            } break;
-            case ':': {
-                SEL arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = NSStringFromSelector(arg);
-            } break;
-            case '{': {
-                void *arg;
-                [invocation getArgument:&arg atIndex:i];
-                argBox = [NSValue value:arg withObjCType:argType];
-            } break;
+                case '*': {
+                    char *arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = [[NSString alloc] initWithUTF8String:arg];
+                } break;
+                case '@': {
+                    id arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = arg;
+                } break;
+                case '#': {
+                    Class arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = NSStringFromClass(arg);
+                } break;
+                case ':': {
+                    SEL arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = NSStringFromSelector(arg);
+                } break;
+                case '{': {
+                    void *arg;
+                    [invocation getArgument:&arg atIndex:i];
+                    argBox = [NSValue value:arg withObjCType:argType];
+                } break;
             default: {
                 void *arg;
                 [invocation getArgument:&arg atIndex:i];
@@ -510,7 +494,7 @@ static void IIFish_NSBlock_HookOnces() {
         Class cls = NSClassFromString(@"NSBlock");
         
 #define IIFish_StrongHookMethod(selector, func) {Method method = class_getInstanceMethod([NSObject class], selector); \
-        BOOL success = class_addMethod(cls, selector, (IMP)func, method_getTypeEncoding(method)); \
+BOOL success = class_addMethod(cls, selector, (IMP)func, method_getTypeEncoding(method)); \
 if (!success) { class_replaceMethod(cls, selector, (IMP)func, method_getTypeEncoding(method));}}
         
         IIFish_StrongHookMethod(@selector(methodSignatureForSelector:), iifish_block_methodSignatureForSelector);
@@ -641,7 +625,7 @@ static Class IIFish_Class_CreateFakeSubClass(id object, const char *classPrefix)
     class_addMethod(fakeCls, @selector(class), imp_class, IIFish_Method_Type(@selector(class)));
     class_addMethod(fakeCls, @selector(superclass), imp_superClass, IIFish_Method_Type(@selector(superclass)));
     class_addMethod(fakeCls, @selector(forwardInvocation:), (IMP)fakeForwardInvocation, IIFish_Method_Type(@selector(forwardInvocation:)));
-
+    
     objc_registerClassPair(fakeCls);
     
     return fakeCls;
@@ -649,7 +633,7 @@ static Class IIFish_Class_CreateFakeSubClass(id object, const char *classPrefix)
 
 static void IIFish_Hook_Class(id object) {
     if (!IIFish_Class_IsSafeObject(object)) {
-        //error
+        //error kvo  fix
         return;
     }
     
@@ -660,18 +644,18 @@ static void IIFish_Hook_Class(id object) {
 static void IIFish_Hook_Method(id object, SEL cmd) {
     
     Class cls = object_getClass(object);
+    
+    if (IIFish_Class_getInstanceMethodWithoutSuper(cls, cmd)) {
+        return;
+    }
+    
     Method orgMethod = class_getInstanceMethod(cls, cmd);
     NSString *fakeSelStr = [NSString stringWithFormat:@"%s%s", IIFish_Prefix, sel_getName(cmd)];
     SEL fakeSel = NSSelectorFromString(fakeSelStr);
     const char *methodType = method_getTypeEncoding(orgMethod);
-    class_addMethod(cls, fakeSel,IIFish_msgForward(methodType), methodType);
-    class_addMethod(cls, cmd, method_getImplementation(orgMethod), method_getTypeEncoding(orgMethod));
     
-    
-    orgMethod = class_getInstanceMethod(cls, cmd);
-    Method fakeMethod = class_getInstanceMethod(cls, fakeSel);
-    method_exchangeImplementations(orgMethod, fakeMethod);
-    
+    class_addMethod(cls, fakeSel, method_getImplementation(orgMethod), methodType);
+    class_addMethod(cls, cmd, IIFish_msgForward(methodType), method_getTypeEncoding(orgMethod));
 }
 
 #pragma mark- Property helper
@@ -743,42 +727,46 @@ static SEL IIFish_Property_GetSelector(Class cls, const char *propertyName) {
 
 @implementation IIFishBind
 
+static pthread_mutex_t mutex;
+
 + (void)bindFishes:(NSArray <IIFish*> *)fishes {
     
-    IIFish_Lock(^{
-        for (IIFish *fish in fishes) {
-            if (fish.flag & IIFish_Observer) continue;
-            
-            if (fish.flag & IIFish_Property) {// property
-                SEL selector = IIFish_Property_SetSelector([fish.object class],[fish.property UTF8String]);
-                if (!selector) continue;
-                fish.selector = selector;
-                IIFish_Hook_Class(fish.object);
-                IIFish_Hook_Method(fish.object, selector);
-            } else if (fish.flag & IIFish_Seletor) {// method
-                IIFish_Hook_Class(fish.object);
-                IIFish_Hook_Method(fish.object, fish.selector);
-            } else if (fish.flag & IIFish_IsBlock) { // block
-                IIFish_Hook_Block(fish.object);
-            }
-            
-            NSString *key = fish.flag & IIFish_IsBlock ? IIFishBlockObserverKey : NSStringFromSelector(fish.selector);
-            NSString *info =  fish.flag & IIFish_Property ? fish.property : @"";
-            
-            IIObserverAsset *asset = IIFish_Class_Get_Asset(fish.object);
-            
-            [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSSet<IIFish *> *> *observerAsset) {
-                [methodAsset addEntriesFromDictionary:@{key : info}];
-                
-                NSMutableSet *observerFishes = [NSMutableSet new];
-                for (IIFish *f in fishes) {
-                    if (f.flag & IIFish_Post ||  f == fish) continue;
-                    [observerFishes addObject:f];
-                }
-                [observerAsset addEntriesFromDictionary:@{key : observerFishes}];
-            }];
+    pthread_mutex_init(&mutex, NULL);
+    pthread_mutex_lock(&mutex);
+    
+    for (IIFish *fish in fishes) {
+        if (fish.flag & IIFish_Observer) continue;
+        
+        if (fish.flag & IIFish_Property) {// property
+            SEL selector = IIFish_Property_SetSelector([fish.object class],[fish.property UTF8String]);
+            if (!selector) continue;
+            fish.selector = selector;
+            IIFish_Hook_Class(fish.object);
+            IIFish_Hook_Method(fish.object, selector);
+        } else if (fish.flag & IIFish_Seletor) {// method
+            IIFish_Hook_Class(fish.object);
+            IIFish_Hook_Method(fish.object, fish.selector);
+        } else if (fish.flag & IIFish_IsBlock) { // block
+            IIFish_Hook_Block(fish.object);
         }
-    });
+        
+        NSString *key = fish.flag & IIFish_IsBlock ? IIFishBlockObserverKey : NSStringFromSelector(fish.selector);
+        NSString *info =  fish.flag & IIFish_Property ? fish.property : @"";
+        
+        IIObserverAsset *asset = IIFish_Class_Get_Asset(fish.object);
+        
+        [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSSet<IIFish *> *> *observerAsset) {
+            [methodAsset addEntriesFromDictionary:@{key : info}];
+            
+            NSMutableSet *observerFishes = [NSMutableSet new];
+            for (IIFish *f in fishes) {
+                if (f.flag & IIFish_Post ||  f == fish) continue;
+                [observerFishes addObject:f];
+            }
+            [observerAsset addEntriesFromDictionary:@{key : observerFishes}];
+        }];
+    }
+    pthread_mutex_unlock(&mutex);
 }
 
 + (void)removeFish:(NSArray <IIFish *> *)fishes {
