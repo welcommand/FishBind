@@ -605,22 +605,27 @@ void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
 
 static BOOL IIFish_Class_IsSafeObject(id object) {
     
-    return [object class] == object_getClass(object) || strncmp(class_getName(object_getClass(object)),IIFish_Prefix,strlen(IIFish_Prefix));
+    return [object class] == object_getClass(object) || strncmp(object_getClassName(object),IIFish_Prefix,strlen(IIFish_Prefix));
 }
 
 static Class IIFish_Class_CreateFakeSubClass(id object, const char *classPrefix) {
     Class orgCls = object_getClass(object);
     
     const char *orgClassName = class_getName(orgCls);
-    char *className = malloc(strlen(orgClassName) + strlen(classPrefix));
-    strcpy(className, classPrefix);
-    strcat(className, orgClassName);
+    char *fakeClassName = malloc(strlen(orgClassName) + strlen(classPrefix));
+    strcpy(fakeClassName, classPrefix);
+    strcat(fakeClassName, orgClassName);
     
-    Class newCls = objc_allocateClassPair(orgCls, className, 0);
+    Class fakeCls = objc_lookUpClass(fakeClassName);
+    if (fakeCls) {
+        free(fakeClassName);
+        return fakeCls;
+    }
     
-    free(className);
+    fakeCls = objc_allocateClassPair(orgCls, fakeClassName, 0);
+    free(fakeClassName);
     
-    if (newCls == Nil) {
+    if (fakeCls == Nil) {
         return Nil;
     }
     
@@ -633,13 +638,13 @@ static Class IIFish_Class_CreateFakeSubClass(id object, const char *classPrefix)
     
 #define IIFish_Method_Type(aSelector) method_getTypeEncoding( class_getInstanceMethod([NSObject class], (aSelector)))
     
-    class_addMethod(newCls, @selector(class), imp_class, IIFish_Method_Type(@selector(class)));
-    class_addMethod(newCls, @selector(superclass), imp_superClass, IIFish_Method_Type(@selector(superclass)));
-    class_addMethod(newCls, @selector(forwardInvocation:), (IMP)fakeForwardInvocation, IIFish_Method_Type(@selector(forwardInvocation:)));
+    class_addMethod(fakeCls, @selector(class), imp_class, IIFish_Method_Type(@selector(class)));
+    class_addMethod(fakeCls, @selector(superclass), imp_superClass, IIFish_Method_Type(@selector(superclass)));
+    class_addMethod(fakeCls, @selector(forwardInvocation:), (IMP)fakeForwardInvocation, IIFish_Method_Type(@selector(forwardInvocation:)));
 
-    objc_registerClassPair(newCls);
+    objc_registerClassPair(fakeCls);
     
-    return newCls;
+    return fakeCls;
 }
 
 static void IIFish_Hook_Class(id object) {
@@ -648,11 +653,8 @@ static void IIFish_Hook_Class(id object) {
         return;
     }
     
-    if (!IIFish_ClassTable_ContainClass([object class])) {
-        Class newCls = IIFish_Class_CreateFakeSubClass(object, IIFish_Prefix);
-        IIFish_ClassTable_AddClass([object class]);
-        object_setClass(object, newCls);
-    }
+    Class cls = IIFish_Class_CreateFakeSubClass(object, IIFish_Prefix);
+    object_setClass(object, cls);
 }
 
 static void IIFish_Hook_Method(id object, SEL cmd) {
