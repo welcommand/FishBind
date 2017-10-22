@@ -29,7 +29,7 @@ typedef NS_OPTIONS(NSInteger, IIFishFlage) {
 
 @implementation IIFishCallBack
 - (NSString *)description {
-    return [NSString stringWithFormat:@"tager = %@\nselector = %@\nargs = %@\nresule = %@", _tager, _selector, _args, _resule];
+    return [NSString stringWithFormat:@"\ntager = %@\nselector = %@\nargs = %@\nresule = %@", _tager, _selector, _args, _resule];
 }
 @end
 

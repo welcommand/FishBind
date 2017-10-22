@@ -54,7 +54,6 @@ int main(int argc, const char * argv[]) {
 
         
         NSInteger (^testBlock)(CGFloat i) = ^(CGFloat i) {
-            NSLog(@"asdasdsa");
             return (NSInteger)4;
         };
         
@@ -70,7 +69,7 @@ int main(int argc, const char * argv[]) {
         
         void (^testMallocBlock) (void)= ^() {
             objectA1.age = 100;
-            NSLog(@"age = %@",@(objectA1.age));
+            NSLog(@"===%@",@(objectA1.age));
         };
         
         [IIFishBind bindFishes:@[
