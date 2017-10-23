@@ -166,7 +166,7 @@ IIFishCallBack 会把完整的信息交给你。IIFishCallBack结构如下
 
 ```
 + (instancetype)postBlock:(id)blockObject;
-+ (instancetype)post:(id)object selector:(SEL)selector;
++ (instancetype)observer:(id)object callBack:(IIFishCallBackBlock)callBack;
 ```
 
 最后绑定一下就好了。
