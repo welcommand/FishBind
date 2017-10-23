@@ -270,3 +270,4 @@ IIFishCallBack 会把完整的信息交给你。IIFishCallBack结构如下
 - [ ] 兼容KVO
 - [ ] 适配UIKit
 - [ ] 属性类型自动适配
+- [ ] 自由的remove
