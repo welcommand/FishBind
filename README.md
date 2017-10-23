@@ -9,58 +9,100 @@ FishBind可以轻松的实现对象间的绑定。支持绑定属性、方法、
 ## 例子
 
 ```
-        IITestObjectA *objectA = [IITestObjectA new];
-        IITestObjectB *objectB = [IITestObjectB new];
-        IITestObjectA *objectA1 = [IITestObjectA new];
-        
-        objectA1.name = @"first name";
-        
-        [IIFishBind bindFishes:@[
-                                 [IIFish both:objectA property:@"name"],
-                                 [IIFish both:objectB property:@"nameData"]
-                                 ]];
-        objectA.name = @"dead fish";
-        NSLog(@"===%@ ===%@===",objectA.name, objectB.nameData);
-        // put ===dead fish ===dead fish===
-        
-        objectB.nameData = @"name data";
-        NSLog(@"===%@ ===%@===",objectA.name, objectB.nameData);
-        //put ===name data ===name data===
-        
-        [IIFishBind bindFishes:@[
-                                 [IIFish post:objectA selector:@selector(loadDataWithName:age:)],
-                                 [IIFish observer:objectB
-                                         callBack:^(IIFishCallBack *callBack, id deadFish) {
-                                             NSArray *args = callBack.args;
-                                             NSString *name = [NSString stringWithFormat:@"NAME : %@",args[0]];
-                                             // don`t call [objectB setNameData:args[0]]. will Dead loop
-                                             [deadFish setNameData:name];
-                                         }]
-                                 ]];
-        
-        [objectA loadDataWithName:@"test" age:18];
-        
-        NSLog(@"===%@ ===%@===",objectA.name, objectB.nameData);
-        //put ===test ===NAME : test===
-        NSLog(@"====%@",objectA1.name);
-        //put ====object1
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    //双向绑定
 
-        
-        NSInteger (^testBlock)(NSInteger i, NSInteger j) = ^(NSInteger i, NSInteger j) {
-            return i + j;
-        };
-        
-        [IIFishBind bindFishes:@[
-                                 [IIFish postBlock:testBlock],
-                                 [IIFish observer:objectA1
-                                         callBack:^(IIFishCallBack *callBack, id deadFish) {
-                                             
-                                             NSLog(@"test block called :  %@ + %@ = %@",callBack.args[0],callBack.args[1], callBack.resule);
-                                             //put 3 + 4 = 7
-                                         }]
-                                 ]];
-        
-        testBlock(3,4);
+    TestA *objA = [TestA new];
+    TestB *objB = [TestB new];
+    TestC *objC = [TestC new];
+    TestD *objD = [TestD new];
+    
+    [IIFishBind bindFishes:@[
+                             [IIFish both:objA property:@"name"
+                                 callBack:^(IIFishCallBack *callBack, id deadFish) {
+                                     [deadFish setUserName:callBack.args[0]];
+                                 }],
+                             [IIFish both:objB property:@"bName"
+                                 callBack:^(IIFishCallBack *callBack, id deadFish) {
+                                     [deadFish setBName:callBack.args[0]];
+                                 }],
+                             [IIFish both:objD
+                                 selector:@selector(setDK_Name:)
+                                 callBack:^(IIFishCallBack *callBack, id deadFish) {
+                                     [deadFish setDK_Name:[NSString stringWithFormat:@"DK_%@",callBack.args[0]]];
+                                 }],
+                             [IIFish observer:objC
+                                     callBack:^(IIFishCallBack *callBack, id deadFish) {
+                                         objC.fullName = [NSString stringWithFormat:@"\nTestA : name = %@\nTestB : bName = %@\nTestD : DK_Name = %@",objA.userName, objB.bName, objD.DK_Name];
+                                     }]
+                             ]];
+    
+    
+    objA.name = @"json";
+    NSLog(@"%@", objC.fullName);
+    /*
+     TestA : name = json
+     TestB : bName = json
+     TestD : DK_Name = DK_json
+     */
+    
+    objB.bName = @"GCD";
+    NSLog(@"%@", objC.fullName);
+    /*
+    TestA : name = GCD
+    TestB : bName = GCD
+    TestD : DK_Name = DK_GCD
+     */
+    
+    objD.DK_Name = @"apple";
+    NSLog(@"%@", objC.fullName);
+    /*
+    TestA : name = apple
+    TestB : bName = apple
+    TestD : DK_Name = apple
+     */
+    
+    // 绑定block
+    
+    CGFloat (^testBlock)(CGFloat i, CGFloat j) = ^(CGFloat i, CGFloat j) {
+        return i + j;
+    };
+    
+    [IIFishBind bindFishes:@[
+                             [IIFish postBlock:testBlock],
+                             [IIFish observer:self
+                                     callBack:^(IIFishCallBack *callBack, id deadFish) {
+                                         NSLog(@"%@ + %@ = %@", callBack.args[0], callBack.args[1], callBack.resule);
+                                         // 3.1 + 4.1 = 7.199999999999999
+                                     }]
+                             ]];
+    
+    
+    CGFloat value = testBlock (3.1, 4.1);
+    
+    NSLog(@"value = %@", @(value));
+    // value = 7.199999999999999
+    
+    // 单向绑定
+    
+    [IIFishBind bindFishes:@[
+                             [IIFish post:self selector:@selector(viewDidAppear:)],
+                             [IIFish observer:self
+                                     callBack:^(IIFishCallBack *callBack, id deadFish) {
+                                          NSLog(@"======== 2 ===========");
+                                     }]
+                             ]];
+}
+
+
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    
+    NSLog(@"======== 1 ===========");
+}
+
 ```
 
  
