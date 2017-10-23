@@ -7,10 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		2D9D7D931F77878B00C82428 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 2D9D7D921F77878B00C82428 /* main.m */; };
-		2D9D7D9C1F7787C300C82428 /* IIFishBind.m in Sources */ = {isa = PBXBuildFile; fileRef = 2D9D7D9B1F7787C300C82428 /* IIFishBind.m */; };
-		2D9D7D9F1F7787F600C82428 /* IITestObjectA.m in Sources */ = {isa = PBXBuildFile; fileRef = 2D9D7D9E1F7787F600C82428 /* IITestObjectA.m */; };
-		2D9D7DA21F77880500C82428 /* IITestObjectB.m in Sources */ = {isa = PBXBuildFile; fileRef = 2D9D7DA11F77880500C82428 /* IITestObjectB.m */; };
+		2D774A2F1F9D9C650078C6B5 /* TestB.m in Sources */ = {isa = PBXBuildFile; fileRef = 2D774A271F9D9B460078C6B5 /* TestB.m */; };
+		2D774A301F9D9C650078C6B5 /* TestD.m in Sources */ = {isa = PBXBuildFile; fileRef = 2D774A2D1F9D9BC00078C6B5 /* TestD.m */; };
+		2D774A311F9D9C650078C6B5 /* TestC.m in Sources */ = {isa = PBXBuildFile; fileRef = 2D774A2A1F9D9B510078C6B5 /* TestC.m */; };
+		2D774A321F9D9C650078C6B5 /* TestA.m in Sources */ = {isa = PBXBuildFile; fileRef = 2D774A241F9D9B3B0078C6B5 /* TestA.m */; };
 		2DBA234D1F94409E005F1FE2 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 2DBA234C1F94409E005F1FE2 /* AppDelegate.m */; };
 		2DBA23501F94409E005F1FE2 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 2DBA234F1F94409E005F1FE2 /* ViewController.m */; };
 		2DBA23531F94409E005F1FE2 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 2DBA23511F94409E005F1FE2 /* Main.storyboard */; };
@@ -20,27 +20,17 @@
 		2DBA235F1F9441D8005F1FE2 /* IIFishBind.m in Sources */ = {isa = PBXBuildFile; fileRef = 2D9D7D9B1F7787C300C82428 /* IIFishBind.m */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXCopyFilesBuildPhase section */
-		2D9D7D8D1F77878B00C82428 /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-		};
-/* End PBXCopyFilesBuildPhase section */
-
 /* Begin PBXFileReference section */
-		2D9D7D8F1F77878B00C82428 /* FishBindDemo */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = FishBindDemo; sourceTree = BUILT_PRODUCTS_DIR; };
-		2D9D7D921F77878B00C82428 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		2D774A231F9D9B3B0078C6B5 /* TestA.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TestA.h; sourceTree = "<group>"; };
+		2D774A241F9D9B3B0078C6B5 /* TestA.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TestA.m; sourceTree = "<group>"; };
+		2D774A261F9D9B460078C6B5 /* TestB.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TestB.h; sourceTree = "<group>"; };
+		2D774A271F9D9B460078C6B5 /* TestB.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TestB.m; sourceTree = "<group>"; };
+		2D774A291F9D9B510078C6B5 /* TestC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TestC.h; sourceTree = "<group>"; };
+		2D774A2A1F9D9B510078C6B5 /* TestC.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TestC.m; sourceTree = "<group>"; };
+		2D774A2C1F9D9BC00078C6B5 /* TestD.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TestD.h; sourceTree = "<group>"; };
+		2D774A2D1F9D9BC00078C6B5 /* TestD.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TestD.m; sourceTree = "<group>"; };
 		2D9D7D9A1F7787C300C82428 /* IIFishBind.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IIFishBind.h; sourceTree = "<group>"; };
 		2D9D7D9B1F7787C300C82428 /* IIFishBind.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IIFishBind.m; sourceTree = "<group>"; };
-		2D9D7D9D1F7787F600C82428 /* IITestObjectA.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IITestObjectA.h; sourceTree = "<group>"; };
-		2D9D7D9E1F7787F600C82428 /* IITestObjectA.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IITestObjectA.m; sourceTree = "<group>"; };
-		2D9D7DA01F77880500C82428 /* IITestObjectB.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IITestObjectB.h; sourceTree = "<group>"; };
-		2D9D7DA11F77880500C82428 /* IITestObjectB.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IITestObjectB.m; sourceTree = "<group>"; };
 		2DBA23491F94409E005F1FE2 /* FishBindDemo-iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "FishBindDemo-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2DBA234B1F94409E005F1FE2 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		2DBA234C1F94409E005F1FE2 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -54,13 +44,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		2D9D7D8C1F77878B00C82428 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		2DBA23461F94409E005F1FE2 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -75,7 +58,6 @@
 			isa = PBXGroup;
 			children = (
 				2D9D7D991F7787C300C82428 /* FishBind */,
-				2D9D7D911F77878B00C82428 /* FishBindDemo */,
 				2DBA234A1F94409E005F1FE2 /* FishBindDemo-iOS */,
 				2D9D7D901F77878B00C82428 /* Products */,
 			);
@@ -84,22 +66,9 @@
 		2D9D7D901F77878B00C82428 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				2D9D7D8F1F77878B00C82428 /* FishBindDemo */,
 				2DBA23491F94409E005F1FE2 /* FishBindDemo-iOS.app */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		2D9D7D911F77878B00C82428 /* FishBindDemo */ = {
-			isa = PBXGroup;
-			children = (
-				2D9D7D921F77878B00C82428 /* main.m */,
-				2D9D7D9D1F7787F600C82428 /* IITestObjectA.h */,
-				2D9D7D9E1F7787F600C82428 /* IITestObjectA.m */,
-				2D9D7DA01F77880500C82428 /* IITestObjectB.h */,
-				2D9D7DA11F77880500C82428 /* IITestObjectB.m */,
-			);
-			path = FishBindDemo;
 			sourceTree = "<group>";
 		};
 		2D9D7D991F7787C300C82428 /* FishBind */ = {
@@ -114,6 +83,14 @@
 		2DBA234A1F94409E005F1FE2 /* FishBindDemo-iOS */ = {
 			isa = PBXGroup;
 			children = (
+				2D774A231F9D9B3B0078C6B5 /* TestA.h */,
+				2D774A241F9D9B3B0078C6B5 /* TestA.m */,
+				2D774A261F9D9B460078C6B5 /* TestB.h */,
+				2D774A271F9D9B460078C6B5 /* TestB.m */,
+				2D774A291F9D9B510078C6B5 /* TestC.h */,
+				2D774A2A1F9D9B510078C6B5 /* TestC.m */,
+				2D774A2C1F9D9BC00078C6B5 /* TestD.h */,
+				2D774A2D1F9D9BC00078C6B5 /* TestD.m */,
 				2DBA234B1F94409E005F1FE2 /* AppDelegate.h */,
 				2DBA234C1F94409E005F1FE2 /* AppDelegate.m */,
 				2DBA234E1F94409E005F1FE2 /* ViewController.h */,
@@ -130,23 +107,6 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		2D9D7D8E1F77878B00C82428 /* FishBindDemo */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 2D9D7D961F77878B00C82428 /* Build configuration list for PBXNativeTarget "FishBindDemo" */;
-			buildPhases = (
-				2D9D7D8B1F77878B00C82428 /* Sources */,
-				2D9D7D8C1F77878B00C82428 /* Frameworks */,
-				2D9D7D8D1F77878B00C82428 /* CopyFiles */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = FishBindDemo;
-			productName = FishBindDemo;
-			productReference = 2D9D7D8F1F77878B00C82428 /* FishBindDemo */;
-			productType = "com.apple.product-type.tool";
-		};
 		2DBA23481F94409E005F1FE2 /* FishBindDemo-iOS */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 2DBA235E1F94409E005F1FE2 /* Build configuration list for PBXNativeTarget "FishBindDemo-iOS" */;
@@ -173,10 +133,6 @@
 				LastUpgradeCheck = 0900;
 				ORGANIZATIONNAME = WELCommand;
 				TargetAttributes = {
-					2D9D7D8E1F77878B00C82428 = {
-						CreatedOnToolsVersion = 8.2.1;
-						ProvisioningStyle = Automatic;
-					};
 					2DBA23481F94409E005F1FE2 = {
 						CreatedOnToolsVersion = 9.0;
 						DevelopmentTeam = 42Q4XDWY3Y;
@@ -197,7 +153,6 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				2D9D7D8E1F77878B00C82428 /* FishBindDemo */,
 				2DBA23481F94409E005F1FE2 /* FishBindDemo-iOS */,
 			);
 		};
@@ -217,25 +172,18 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		2D9D7D8B1F77878B00C82428 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				2D9D7D9F1F7787F600C82428 /* IITestObjectA.m in Sources */,
-				2D9D7DA21F77880500C82428 /* IITestObjectB.m in Sources */,
-				2D9D7D9C1F7787C300C82428 /* IIFishBind.m in Sources */,
-				2D9D7D931F77878B00C82428 /* main.m in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		2DBA23451F94409E005F1FE2 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2D774A301F9D9C650078C6B5 /* TestD.m in Sources */,
 				2DBA235F1F9441D8005F1FE2 /* IIFishBind.m in Sources */,
 				2DBA23501F94409E005F1FE2 /* ViewController.m in Sources */,
+				2D774A321F9D9C650078C6B5 /* TestA.m in Sources */,
 				2DBA235B1F94409E005F1FE2 /* main.m in Sources */,
 				2DBA234D1F94409E005F1FE2 /* AppDelegate.m in Sources */,
+				2D774A2F1F9D9C650078C6B5 /* TestB.m in Sources */,
+				2D774A311F9D9C650078C6B5 /* TestC.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -360,20 +308,6 @@
 			};
 			name = Release;
 		};
-		2D9D7D971F77878B00C82428 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Debug;
-		};
-		2D9D7D981F77878B00C82428 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Release;
-		};
 		2DBA235C1F94409E005F1FE2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -437,15 +371,6 @@
 			buildConfigurations = (
 				2D9D7D941F77878B00C82428 /* Debug */,
 				2D9D7D951F77878B00C82428 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		2D9D7D961F77878B00C82428 /* Build configuration list for PBXNativeTarget "FishBindDemo" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				2D9D7D971F77878B00C82428 /* Debug */,
-				2D9D7D981F77878B00C82428 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

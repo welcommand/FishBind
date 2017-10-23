@@ -8,7 +8,10 @@
 
 #import "ViewController.h"
 #import "IIFishBind.h"
-#import <objc/runtime.h>
+#import "TestA.h"
+#import "TestB.h"
+#import "TestC.h"
+#import "TestD.h"
 
 @interface ViewController ()
 
@@ -20,29 +23,42 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    
+    //双向绑定
 
+    TestA *objA = [TestA new];
+    TestB *objB = [TestB new];
+    TestC *objC = [TestC new];
+    TestD *objD = [TestD new];
     
-    //[self doesNotRecognizeSelector:<#(SEL)#>]
+    [IIFishBind bindFishes:@[
+                             [IIFish both:objA property:@"name"],
+                             [IIFish both:objB property:@"bName"],
+                             [IIFish observer:objC
+                                     callBack:^(IIFishCallBack *callBack, id deadFish) {
+                                         objC.fullName = [NSString stringWithFormat:@"\nTestA : name = %@\nTestB : bName = %@\nTestD : DK_Name = %@",objA.userName, objB.bName, objD.DK_Name];
+                                     }],
+                             [IIFish both:objD
+                                 selector:@selector(setDK_Name:)
+                                 callBack:^(IIFishCallBack *callBack, id deadFish) {
+                                     [deadFish setDK_Name:[NSString stringWithFormat:@"DK_%@",callBack.args[0]]];
+                                 }]
+                             ]];
     
     
-//    [IIWatchmen watchObject:self containSuper:YES callBack:^(IIFishCallBack *callBack) {
-//        NSLog(@"====%@====", callBack.selector);
-//    }];
+    objA.name = @"json";
+    NSLog(@"%@", objC.fullName);
+    
+    objB.bName = @"GCD";
+    NSLog(@"%@", objC.fullName);
+    
+    objD.DK_Name = @"apple";
+    NSLog(@"%@", objC.fullName);
     
     
-//    void (^testBlock)(id f, NSInteger i, NSInteger j) = ^(id f, NSInteger i, NSInteger j) {
-//        NSLog(@"asdasd");
-//    };
-//
-//    [IIFishBind bindFishes:@[[IIFish postBlock:testBlock],
-//                             [IIFish observer:self callBack:^(IIFishCallBack *callBack, id deadFish) {
-//    }]]];
-//    testBlock(self,3,5);
+    
 }
 
-- (void)viewWillAppear:(BOOL)animated {
-    [super viewWillAppear:animated];
-}
 
 
 @end
