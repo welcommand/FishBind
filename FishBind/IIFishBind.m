@@ -51,8 +51,8 @@ typedef NS_OPTIONS(NSInteger, IIFishFlage) {
 + (instancetype)both:(id)object selector:(SEL)selector callBack:(IIFishCallBackBlock)callBack {
     return [self  fish:object property:nil selector:selector callBack:callBack flag:IIFish_Seletor];
 }
-+ (instancetype)both:(id)object property:(NSString*)property {
-    return [self fish:object property:property selector:nil callBack:nil flag:IIFish_Property];
++ (instancetype)both:(id)object property:(NSString*)property callBack:(IIFishCallBackBlock)callBack {
+    return [self fish:object property:property selector:nil callBack:callBack flag:IIFish_Property];
 }
 + (instancetype)postBlock:(id)blockObject {
     return [self fish:blockObject property:nil selector:nil callBack:nil flag:IIFish_Post | IIFish_IsBlock];
@@ -571,7 +571,7 @@ void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
     }
     
     for (IIFish *fish in observers) {
-        if (fish.flag & IIFish_Property && propertyValue != NULL) {
+        if (info.length > 0 && fish.flag & IIFish_Property && propertyValue != NULL) {
             SEL observerSetSel = IIFish_Property_SetSelector([fish.object class], [fish.property UTF8String]);
             NSMethodSignature *ms = [fish.object methodSignatureForSelector:observerSetSel];
             NSInvocation *invo = [NSInvocation invocationWithMethodSignature:ms];
