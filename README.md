@@ -16,7 +16,6 @@ FishBind可以轻松的实现对象间的绑定。支持绑定属性、方法、
 
     TestA *objA = [TestA new];
     TestB *objB = [TestB new];
-    TestC *objC = [TestC new];
     TestD *objD = [TestD new];
     
     [IIFishBind bindFishes:@[
@@ -32,16 +31,11 @@ FishBind可以轻松的实现对象间的绑定。支持绑定属性、方法、
                                  selector:@selector(setDK_Name:)
                                  callBack:^(IIFishCallBack *callBack, id deadFish) {
                                      [deadFish setDK_Name:[NSString stringWithFormat:@"DK_%@",callBack.args[0]]];
-                                 }],
-                             [IIFish observer:objC
-                                     callBack:^(IIFishCallBack *callBack, id deadFish) {
-                                         objC.fullName = [NSString stringWithFormat:@"\nTestA : name = %@\nTestB : bName = %@\nTestD : DK_Name = %@",objA.userName, objB.bName, objD.DK_Name];
-                                     }]
+                                 }]
                              ]];
     
-    
     objA.name = @"json";
-    NSLog(@"%@", objC.fullName);
+    NSLog(@"%@", [NSString stringWithFormat:@"\nTestA : name = %@\nTestB : bName = %@\nTestD : DK_Name = %@",objA.userName, objB.bName, objD.DK_Name]);
     /*
      TestA : name = json
      TestB : bName = json
@@ -49,7 +43,7 @@ FishBind可以轻松的实现对象间的绑定。支持绑定属性、方法、
      */
     
     objB.bName = @"GCD";
-    NSLog(@"%@", objC.fullName);
+    NSLog(@"%@", [NSString stringWithFormat:@"\nTestA : name = %@\nTestB : bName = %@\nTestD : DK_Name = %@",objA.userName, objB.bName, objD.DK_Name]);
     /*
     TestA : name = GCD
     TestB : bName = GCD
@@ -57,7 +51,7 @@ FishBind可以轻松的实现对象间的绑定。支持绑定属性、方法、
      */
     
     objD.DK_Name = @"apple";
-    NSLog(@"%@", objC.fullName);
+    NSLog(@"%@", [NSString stringWithFormat:@"\nTestA : name = %@\nTestB : bName = %@\nTestD : DK_Name = %@",objA.userName, objB.bName, objD.DK_Name]);
     /*
     TestA : name = apple
     TestB : bName = apple
@@ -91,16 +85,29 @@ FishBind可以轻松的实现对象间的绑定。支持绑定属性、方法、
                              [IIFish post:self selector:@selector(viewDidAppear:)],
                              [IIFish observer:self
                                      callBack:^(IIFishCallBack *callBack, id deadFish) {
-                                          NSLog(@"======== 2 ===========");
+                                          NSLog(@"======== 4 ===========");
                                      }]
                              ]];
+    
+    [IIFishBind bindFishes:@[
+                             [IIFish post:self selector:@selector(viewWillAppear:)],
+                             [IIFish observer:self
+                                     callBack:^(IIFishCallBack *callBack, id deadFish) {
+                                         NSLog(@"======== 2 ===========");
+                                     }]
+                             ]];
+    
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    NSLog(@"======== 1 ===========");
 }
 
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
-    
-    NSLog(@"======== 1 ===========");
+    NSLog(@"======== 3 ===========");
 }
 
 ```
@@ -233,18 +240,18 @@ IIFishCallBack 会把完整的信息交给你。IIFishCallBack结构如下
 ]];
 ```
 
-如果，对象B的属性b，表示a+c，则如下。
+如果，对象B的属性b，需要特殊处理，比如是a c的100倍，则如下。
 
 ```
 [IIFishBind bindFishes:@[
 		[IIFish both:A property:@"a" callBack:^(IIFishCallBack *callBack, id deadFish) {
-      deadFish.a = B.b - C.c;
+      deadFish.a = [callback.arg[0] intValue] / 100;
 	}]，
 		[IIFish both:C property:@"c" callBack:^(IIFishCallBack *callBack, id deadFish) {
-      deadFish.c = B.b - A.a;
+      deadFish.c = [callback.arg[0] intValue] / 100;
 	}]，
 	[IIFish both:B selector:@selector(setB:) callBack:^(IIFishCallBack *callBack, id deadFish) {
-      deadFish.b = A.a + C.c;
+      deadFish.b = 100 * [callback.arg[0] intValue];
 	}]
 ]];
 ```
@@ -265,9 +272,15 @@ IIFishCallBack 会把完整的信息交给你。IIFishCallBack结构如下
 
 一组中， 如果有使用both:selector:callBack:，则这一组都需要实现callBack，来实现回调行为。
 
+## 绑定的相关注意事项
+
+目前callBack没有优先级，调用顺序不确定，不应该在callBack中直接获取这一组的其他值。
+
+
 ## todo
 
 - [ ] 兼容KVO
 - [ ] 适配UIKit
 - [ ] 属性类型自动适配
 - [ ] 自由的remove
+- [ ] 考虑加入优先级
