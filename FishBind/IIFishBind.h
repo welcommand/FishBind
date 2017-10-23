@@ -37,7 +37,7 @@ typedef void(^IIFishCallBackBlock) (IIFishCallBack *callBack, id deadFish);
 
 // bilateral bind
 + (instancetype)both:(id)object selector:(SEL)selector callBack:(IIFishCallBackBlock)callBack;
-+ (instancetype)both:(id)object property:(NSString *)property callBack:(IIFishCallBackBlock)callBack;;
++ (instancetype)both:(id)object property:(NSString *)property callBack:(IIFishCallBackBlock)callBack;
 
 @end
 

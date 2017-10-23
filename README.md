@@ -132,7 +132,7 @@ FishBind可以轻松的实现对象间的绑定。支持绑定属性、方法、
 
 // bilateral bind
 + (instancetype)both:(id)object selector:(SEL)selector callBack:(IIFishCallBackBlock)callBack;
-+ (instancetype)both:(id)object property:(NSString *)property;
++ (instancetype)both:(id)object property:(NSString *)property callBack:(IIFishCallBackBlock)callBack;;
 ```
 
 
@@ -227,9 +227,9 @@ IIFishCallBack 会把完整的信息交给你。IIFishCallBack结构如下
 
 ```
 [IIFishBind bindFishes:@[
-	[IIFish both:A property:@"a"],
-	[IIFish both:B property:@"b"],
-	[IIFish both:C property:@"c"]
+	[IIFish both:A property:@"a" callBack:nil],
+	[IIFish both:B property:@"b" callBack:nil],
+	[IIFish both:C property:@"c" callBack:nil]
 ]];
 ```
 
@@ -237,10 +237,10 @@ IIFishCallBack 会把完整的信息交给你。IIFishCallBack结构如下
 
 ```
 [IIFishBind bindFishes:@[
-		[IIFish both:A selector:@selector(setA:) callBack:^(IIFishCallBack *callBack, id deadFish) {
+		[IIFish both:A property:@"a" callBack:^(IIFishCallBack *callBack, id deadFish) {
       deadFish.a = B.b - C.c;
 	}]，
-		[IIFish both:C selector:@selector(setC:) callBack:^(IIFishCallBack *callBack, id deadFish) {
+		[IIFish both:C property:@"c" callBack:^(IIFishCallBack *callBack, id deadFish) {
       deadFish.c = B.b - A.a;
 	}]，
 	[IIFish both:B selector:@selector(setB:) callBack:^(IIFishCallBack *callBack, id deadFish) {
@@ -250,6 +250,20 @@ IIFishCallBack 会把完整的信息交给你。IIFishCallBack结构如下
 ```
 
 这里，如果调用 B.b则回会造成死循环，所以需要使用deadFish。
+
+
+
+## 双向绑定API的选择问题
+
+```
++ (instancetype)both:(id)object selector:(SEL)selector callBack:(IIFishCallBackBlock)callBack;
+
++ (instancetype)both:(id)object property:(NSString *)property callBack:(IIFishCallBackBlock)callBack;
+```
+
+使用Both开头的API初始化的IIFish，表示既可以发送改变也可以接受改变。
+
+一组中， 如果有使用both:selector:callBack:，则这一组都需要实现callBack，来实现回调行为。
 
 ## todo
 
