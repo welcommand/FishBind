@@ -28,7 +28,6 @@
 
     TestA *objA = [TestA new];
     TestB *objB = [TestB new];
-    TestC *objC = [TestC new];
     TestD *objD = [TestD new];
     
     [IIFishBind bindFishes:@[
@@ -44,16 +43,11 @@
                                  selector:@selector(setDK_Name:)
                                  callBack:^(IIFishCallBack *callBack, id deadFish) {
                                      [deadFish setDK_Name:[NSString stringWithFormat:@"DK_%@",callBack.args[0]]];
-                                 }],
-                             [IIFish observer:objC
-                                     callBack:^(IIFishCallBack *callBack, id deadFish) {
-                                         objC.fullName = [NSString stringWithFormat:@"\nTestA : name = %@\nTestB : bName = %@\nTestD : DK_Name = %@",objA.userName, objB.bName, objD.DK_Name];
-                                     }]
+                                 }]
                              ]];
     
-    
     objA.name = @"json";
-    NSLog(@"%@", objC.fullName);
+    NSLog(@"%@", [NSString stringWithFormat:@"\nTestA : name = %@\nTestB : bName = %@\nTestD : DK_Name = %@",objA.userName, objB.bName, objD.DK_Name]);
     /*
      TestA : name = json
      TestB : bName = json
@@ -61,7 +55,7 @@
      */
     
     objB.bName = @"GCD";
-    NSLog(@"%@", objC.fullName);
+    NSLog(@"%@", [NSString stringWithFormat:@"\nTestA : name = %@\nTestB : bName = %@\nTestD : DK_Name = %@",objA.userName, objB.bName, objD.DK_Name]);
     /*
     TestA : name = GCD
     TestB : bName = GCD
@@ -69,7 +63,7 @@
      */
     
     objD.DK_Name = @"apple";
-    NSLog(@"%@", objC.fullName);
+    NSLog(@"%@", [NSString stringWithFormat:@"\nTestA : name = %@\nTestB : bName = %@\nTestD : DK_Name = %@",objA.userName, objB.bName, objD.DK_Name]);
     /*
     TestA : name = apple
     TestB : bName = apple
@@ -103,16 +97,29 @@
                              [IIFish post:self selector:@selector(viewDidAppear:)],
                              [IIFish observer:self
                                      callBack:^(IIFishCallBack *callBack, id deadFish) {
-                                          NSLog(@"======== 2 ===========");
+                                          NSLog(@"======== 4 ===========");
                                      }]
                              ]];
+    
+    [IIFishBind bindFishes:@[
+                             [IIFish post:self selector:@selector(viewWillAppear:)],
+                             [IIFish observer:self
+                                     callBack:^(IIFishCallBack *callBack, id deadFish) {
+                                         NSLog(@"======== 2 ===========");
+                                     }]
+                             ]];
+    
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    NSLog(@"======== 1 ===========");
 }
 
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
-    
-    NSLog(@"======== 1 ===========");
+    NSLog(@"======== 3 ===========");
 }
 
 
