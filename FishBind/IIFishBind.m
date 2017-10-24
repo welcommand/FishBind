@@ -170,6 +170,8 @@ static Method IIFish_Class_getInstanceMethodWithoutSuper(Class cls, SEL sel) {
 }
 
 
+
+
 #pragma mark- Type Encodings
 // https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
 
@@ -298,6 +300,23 @@ argBox = @(arg);\
     }
     
     return args;
+}
+
+
+static IIFishCallBack* IIFish_Get_Callback(NSInvocation *invo) {
+    IIFishCallBack *callBack = [[IIFishCallBack alloc] init];
+    callBack.tager = invo.target;
+    
+    if ([callBack.tager isKindOfClass:NSClassFromString(@"NSBlock")]) {
+        callBack.args = IIFish_TypeEncoding_Get_MethodArgs(invo,1);
+    } else {
+        callBack.selector = NSStringFromSelector(invo.selector);
+        callBack.args = IIFish_TypeEncoding_Get_MethodArgs(invo,2);
+    }
+    
+    callBack.resule = IIFish_TypeEncoding_Get_ReturnValueInBox(invo);
+    
+    return callBack;
 }
 
 #pragma mark-
@@ -470,14 +489,9 @@ void iifish_block_forwardInvocation(id self, SEL _cmd, NSInvocation *invo) {
         observers = [[observerAsset objectForKey:key] allObjects];
     }];
     
-    IIFishCallBack *callBack = [[IIFishCallBack alloc] init];
-    callBack.tager = (__bridge id)block;
-    callBack.args = IIFish_TypeEncoding_Get_MethodArgs(invo,1);
-    callBack.resule = IIFish_TypeEncoding_Get_ReturnValueInBox(invo);
-    
     for (IIFish *fish in observers) {
         if (fish.callBack) {
-            fish.callBack(callBack, [fish.object iiDeadFish]);
+            fish.callBack(IIFish_Get_Callback(invo), [fish.object iiDeadFish]);
         }
     }
 }
@@ -546,14 +560,7 @@ void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
     }];
     
     //
-    IIFishCallBack * (^CallBackBlock)(void) = ^() {
-        IIFishCallBack *callBack = [[IIFishCallBack alloc] init];
-        callBack.tager = self;
-        callBack.selector = NSStringFromSelector(anInvocation.selector);
-        callBack.args = IIFish_TypeEncoding_Get_MethodArgs(anInvocation,2);
-        callBack.resule = IIFish_TypeEncoding_Get_ReturnValueInBox(anInvocation);
-        return callBack;
-    };
+
     
     void *propertyValue = NULL;
     if (info.length > 0) {
@@ -579,7 +586,7 @@ void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
             [invo setArgument:propertyValue atIndex:2];
             [invo invokeWithTarget:[fish.object iiDeadFish]];
         } else if (fish.callBack) {
-            IIFishCallBack *callBack = CallBackBlock();
+            IIFishCallBack *callBack = IIFish_Get_Callback(anInvocation);
             fish.callBack(callBack, [fish.object iiDeadFish]);
         }
     }
