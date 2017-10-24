@@ -12,4 +12,6 @@
 
 @property (nonatomic, strong, setter=setUserName:, getter=userName) NSString *name;
 
+@property (nonatomic, assign) double ageA;
+
 @end

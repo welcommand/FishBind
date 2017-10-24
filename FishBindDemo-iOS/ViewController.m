@@ -28,6 +28,7 @@
 
     TestA *objA = [TestA new];
     TestB *objB = [TestB new];
+    TestC *objC = [TestC new];
     TestD *objD = [TestD new];
     
     [IIFishBind bindFishes:@[
@@ -109,6 +110,16 @@
                                      }]
                              ]];
     
+//    //类型自动转换
+//
+//    [IIFishBind bindFishes:@[
+//                             [IIFish both:objA property:@"ageA" callBack:nil],
+//                             [IIFish both:objB property:@"ageB" callBack:nil],
+//                             [IIFish both:objC property:@"ageC" callBack:nil],
+//                             ]];
+//
+//    objA.ageA = 3.3;
+//     NSLog(@"a = %@ b = %@ c = %@", @(objA.ageA), objB.ageB, @(objC.ageC));
 }
 
 - (void)viewWillAppear:(BOOL)animated {
