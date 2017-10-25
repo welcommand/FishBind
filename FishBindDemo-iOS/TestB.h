@@ -12,6 +12,6 @@
 
 @property (nonatomic, copy) NSString *bName;
 
-@property (nonatomic, copy) NSString *ageB;
+@property (nonatomic, assign) double ageB;
 
 @end

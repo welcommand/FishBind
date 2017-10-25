@@ -561,37 +561,26 @@ void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
     
     //
 
+    id propertyValue = nil;
     
-    void *propertyValue = NULL;
     if (info.length > 0) {
         SEL postGetSel = IIFish_Property_GetSelector([self class], [info UTF8String]);
-        
-        Method m = class_getInstanceMethod(cls, postGetSel);
-        NSMethodSignature *ms  = [NSMethodSignature signatureWithObjCTypes:method_getTypeEncoding(m)];
-        NSInvocation *invo = [NSInvocation invocationWithMethodSignature:ms];
-        
-        invo.selector = postGetSel;
-        [invo invokeWithTarget:[self iiDeadFish]];
-        propertyValue = malloc([ms methodReturnLength]);
-        
-        [invo getReturnValue:propertyValue];
+        SEL postOrgGetSel = NSSelectorFromString([NSString stringWithFormat:@"%s%s", IIFish_Prefix, sel_getName(postGetSel)]);
+        SEL postSel = class_getInstanceMethod(cls, postOrgGetSel) ? postOrgGetSel : postGetSel;
+        propertyValue = [self performSelector:postSel];
     }
     
     for (IIFish *fish in observers) {
-        if (info.length > 0 && fish.flag & IIFish_Property && propertyValue != NULL) {
+        if (info.length > 0 && fish.flag & IIFish_Property && propertyValue) {
             SEL observerSetSel = IIFish_Property_SetSelector([fish.object class], [fish.property UTF8String]);
-            NSMethodSignature *ms = [fish.object methodSignatureForSelector:observerSetSel];
-            NSInvocation *invo = [NSInvocation invocationWithMethodSignature:ms];
-            invo.selector = observerSetSel;
-            [invo setArgument:propertyValue atIndex:2];
-            [invo invokeWithTarget:[fish.object iiDeadFish]];
+            SEL observerOrgSetSel = NSSelectorFromString([NSString stringWithFormat:@"%s%s", IIFish_Prefix, sel_getName(observerSetSel)]);
+            SEL observerSel = class_getInstanceMethod(object_getClass(fish.object) , observerOrgSetSel) ? observerOrgSetSel : observerSetSel;
+            [fish.object performSelector:observerSel withObject:propertyValue];
         } else if (fish.callBack) {
             IIFishCallBack *callBack = IIFish_Get_Callback(anInvocation);
             fish.callBack(callBack, [fish.object iiDeadFish]);
         }
     }
-    
-    free(propertyValue);
 }
 
 static BOOL IIFish_Class_IsSafeObject(id object) {

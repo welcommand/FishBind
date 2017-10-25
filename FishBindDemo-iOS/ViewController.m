@@ -31,6 +31,10 @@
     TestC *objC = [TestC new];
     TestD *objD = [TestD new];
     
+    objA.ageA = 3.3;
+    
+    id obj = [objA performSelector:@selector(ageA)];
+    
     [IIFishBind bindFishes:@[
                              [IIFish both:objA property:@"name"
                                  callBack:^(IIFishCallBack *callBack, id deadFish) {
@@ -47,7 +51,7 @@
                                  }]
                              ]];
     
-    objA.name = @"json";
+    [objA setValue:@"json" forKey:@"name"];
     NSLog(@"%@", [NSString stringWithFormat:@"\nTestA : name = %@\nTestB : bName = %@\nTestD : DK_Name = %@",objA.userName, objB.bName, objD.DK_Name]);
     /*
      TestA : name = json
@@ -112,14 +116,16 @@
     
 //    //类型自动转换
 //
-//    [IIFishBind bindFishes:@[
-//                             [IIFish both:objA property:@"ageA" callBack:nil],
-//                             [IIFish both:objB property:@"ageB" callBack:nil],
-//                             [IIFish both:objC property:@"ageC" callBack:nil],
-//                             ]];
+    [IIFishBind bindFishes:@[
+                             [IIFish both:objA property:@"ageA" callBack:nil],
+                             [IIFish both:objB property:@"ageB" callBack:nil],
+                             ]];
 //
-//    objA.ageA = 3.3;
-//     NSLog(@"a = %@ b = %@ c = %@", @(objA.ageA), objB.ageB, @(objC.ageC));
+    objA.ageA = 3.3;
+    
+    
+    
+     NSLog(@"a = %@ b = %@ ", objA.ageA, objB.ageB);
 }
 
 - (void)viewWillAppear:(BOOL)animated {
