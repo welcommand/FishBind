@@ -11,11 +11,6 @@
 #import <objc/runtime.h>
 #import <objc/message.h>
 
-//todo
-
-// remove
-//kvo
-
 static char const* IIFish_Prefix = "IIFish_";
 
 typedef NS_OPTIONS(NSInteger, IIFishFlage) {
@@ -526,11 +521,134 @@ static void IIFish_Hook_Block(id obj) {
     }
 }
 
+
+#pragma mark- Property helper
+
+static SEL IIFish_Property_Selector(Class cls, const char *propertyName, const char *type) {
+    objc_property_t property = class_getProperty(cls, propertyName);
+    if (!property) return 0;
+    
+    SEL sel = NULL;
+    unsigned int count;
+    objc_property_attribute_t *attributes = property_copyAttributeList(property, &count);
+    
+    for (unsigned i = 0; i < count; i++) {
+        objc_property_attribute_t att = attributes[i];
+        if (strcmp(att.name, type) == 0) {
+            sel = sel_getUid(att.value);
+        }
+    }
+    free(attributes);
+    return sel;
+}
+
+static SEL IIFish_Property_GETSelector(Class cls, const char *propertyName) {
+    return IIFish_Property_Selector(cls, propertyName, "G");
+}
+
+static SEL IIFish_Property_SETSelector(Class cls, const char *propertyName) {
+    return IIFish_Property_Selector(cls, propertyName, "S");
+}
+
+static SEL IIFish_Property_AutoGETSelector(Class cls, const char *propertyName) {
+    return sel_getUid(propertyName);
+}
+
+static SEL IIFish_Property_AutoSETSelector(Class cls, const char *propertyName) {
+    char s[strlen(propertyName) + 5];
+    
+    char firstC = propertyName[0];
+    if (isalpha(firstC)) {
+        char c = toupper(firstC);
+        snprintf(s, strlen(propertyName) + 5, &c, propertyName + 1, ":");
+    } else {
+        snprintf(s, strlen(propertyName) + 5, propertyName, ":");
+    }
+    return sel_getUid(s);
+}
+
+static void IIFish_Property_AddFakeGETSelector(Class cls, const char *propertyName) {
+}
+
+static void IIFish_Property_AddFakeSETSelector(Class cls, const char *propertyName) {
+    SEL autoSET = IIFish_Property_AutoSETSelector(cls, propertyName);
+    Method autoSETMethod = class_getInstanceMethod(cls, autoSET);
+    if (autoSETMethod && method_getImplementation(autoSETMethod) == _objc_msgForward) {
+        
+    }
+    
+}
+
+
+//static SEL IIFish_Property_SetSelector(Class cls, const char *propertyName) {
+//    objc_property_t property = class_getProperty(cls, propertyName);
+//    if (!property) return 0;
+//
+//    unsigned int count;
+//    objc_property_attribute_t *attributes = property_copyAttributeList(property, &count);
+//
+//    for (unsigned i = 0; i < count; i++) {
+//        objc_property_attribute_t att = attributes[i];
+//        if (!strcmp(att.name, "S")) {
+//            char *s = malloc(strlen(att.value));
+//            strcpy(s, att.value);
+//
+//            SEL sel = sel_getUid(s);
+//            free(attributes);
+//            free(s);
+//            return sel;
+//        }
+//    }
+//
+//    char *s = malloc(strlen(propertyName) + 5);
+//    strcpy(s, "set");
+//
+//    char firstC = propertyName[0];
+//    if (isalpha(firstC)) {
+//        s[3] = toupper(firstC);
+//        strcat(s, propertyName + 1);
+//    } else {
+//        strcat(s, propertyName);
+//    }
+//    strcat(s, ":");
+//
+//    SEL sel = sel_getUid(s);
+//    free(attributes);
+//    free(s);
+//    return sel;
+//
+//}
+//
+//static SEL IIFish_Property_GetSelector(Class cls, const char *propertyName) {
+//    objc_property_t property = class_getProperty(cls, propertyName);
+//    if (!property) return 0;
+//
+//    unsigned int count;
+//    objc_property_attribute_t *attributes = property_copyAttributeList(property, &count);
+//
+//    for (unsigned i = 0; i < count; i++) {
+//        objc_property_attribute_t att = attributes[i];
+//        if (!strcmp(att.name, "G")) {
+//            char *s = malloc(strlen(att.value));
+//            strcpy(s, att.value);
+//            SEL sel = sel_getUid(s);
+//            free(attributes);
+//            free(s);
+//            return sel;
+//        }
+//    }
+//    char *s = malloc(strlen(propertyName));
+//    strcpy(s, propertyName);
+//    SEL sel = sel_getUid(s);
+//    free(attributes);
+//    free(s);
+//    return sel;
+//}
+//
+//
+
 #pragma mark- Method Hook
 #pragma mark-
-
-static SEL IIFish_Property_GetSelector(Class cls, const char *propertyName);
-static SEL IIFish_Property_SetSelector(Class cls, const char *propertyName);
 
 static IIObserverAsset *IIFish_Class_Get_Asset(id object) {
     IIObserverAsset *asset = objc_getAssociatedObject(object, "IIFish_Class_Get_Asset");
@@ -654,72 +772,6 @@ static void IIFish_Hook_Method(id object, SEL cmd) {
     class_addMethod(cls, cmd, IIFish_msgForward(methodType), method_getTypeEncoding(orgMethod));
 }
 
-#pragma mark- Property helper
-
-static SEL IIFish_Property_SetSelector(Class cls, const char *propertyName) {
-    objc_property_t property = class_getProperty(cls, propertyName);
-    if (!property) return 0;
-    
-    unsigned int count;
-    objc_property_attribute_t *attributes = property_copyAttributeList(property, &count);
-    
-    for (unsigned i = 0; i < count; i++) {
-        objc_property_attribute_t att = attributes[i];
-        if (!strcmp(att.name, "S")) {
-            char *s = malloc(strlen(att.value));
-            strcpy(s, att.value);
-            
-            SEL sel = sel_getUid(s);
-            free(attributes);
-            free(s);
-            return sel;
-        }
-    }
-    
-    char *s = malloc(strlen(propertyName) + 5);
-    strcpy(s, "set");
-    
-    char firstC = propertyName[0];
-    if (isalpha(firstC)) {
-        s[3] = toupper(firstC);
-        strcat(s, propertyName + 1);
-    } else {
-        strcat(s, propertyName);
-    }
-    strcat(s, ":");
-    
-    SEL sel = sel_getUid(s);
-    free(attributes);
-    free(s);
-    return sel;
-    
-}
-
-static SEL IIFish_Property_GetSelector(Class cls, const char *propertyName) {
-    objc_property_t property = class_getProperty(cls, propertyName);
-    if (!property) return 0;
-    
-    unsigned int count;
-    objc_property_attribute_t *attributes = property_copyAttributeList(property, &count);
-    
-    for (unsigned i = 0; i < count; i++) {
-        objc_property_attribute_t att = attributes[i];
-        if (!strcmp(att.name, "G")) {
-            char *s = malloc(strlen(att.value));
-            strcpy(s, att.value);
-            SEL sel = sel_getUid(s);
-            free(attributes);
-            free(s);
-            return sel;
-        }
-    }
-    char *s = malloc(strlen(propertyName));
-    strcpy(s, propertyName);
-    SEL sel = sel_getUid(s);
-    free(attributes);
-    free(s);
-    return sel;
-}
 
 @implementation IIFishBind
 
@@ -734,11 +786,20 @@ static pthread_mutex_t mutex;
         if (fish.flag & IIFish_Observer) continue;
         
         if (fish.flag & IIFish_Property) {// property
-            SEL selector = IIFish_Property_SetSelector([fish.object class],[fish.property UTF8String]);
-            if (!selector) continue;
-            fish.selector = selector;
+            Class cls = [fish.object class];
+            
+            SEL SETSelector = IIFish_Property_SETSelector(cls, [fish.property UTF8String]);
+            SEL autoSETSelector = IIFish_Property_AutoSETSelector(cls, [fish.property UTF8String]);
             IIFish_Hook_Class(fish.object);
-            IIFish_Hook_Method(fish.object, selector);
+            
+            if (SETSelector) {
+                fish.selector = SETSelector;
+                IIFish_Hook_Method(cls, SETSelector);
+            } else {
+                fish.selector = autoSETSelector;
+            }
+            
+            IIFish_Hook_Method(cls,autoSETSelector);
         } else if (fish.flag & IIFish_Seletor) {// method
             IIFish_Hook_Class(fish.object);
             IIFish_Hook_Method(fish.object, fish.selector);
