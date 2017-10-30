@@ -110,7 +110,7 @@
                                      }]
                              ]];
     
-//    //类型自动转换
+//    //类型自动转换 基于KVC
 //
     [IIFishBind bindFishes:@[
                              [IIFish both:objA property:@"ageA" callBack:nil],
