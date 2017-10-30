@@ -28,7 +28,6 @@
 
     TestA *objA = [TestA new];
     TestB *objB = [TestB new];
-    TestC *objC = [TestC new];
     TestD *objD = [TestD new];
     
     [IIFishBind bindFishes:@[
@@ -71,6 +70,18 @@
     TestD : DK_Name = apple
      */
     
+    
+    //类型自动转换 基于KVC
+    //
+    [IIFishBind bindFishes:@[
+                             [IIFish both:objA property:@"ageA" callBack:nil],
+                             [IIFish both:objB property:@"ageB" callBack:nil],
+                             ]];
+    //
+    objA.ageA = 3.3;
+    
+    NSLog(@"a = %@ b = %@ ", @(objA.ageA),@( objB.ageB));
+    
     // 绑定block
     
     CGFloat (^testBlock)(CGFloat i, CGFloat j) = ^(CGFloat i, CGFloat j) {
@@ -109,19 +120,6 @@
                                          NSLog(@"======== 2 ===========");
                                      }]
                              ]];
-    
-//    //类型自动转换 基于KVC
-//
-    [IIFishBind bindFishes:@[
-                             [IIFish both:objA property:@"ageA" callBack:nil],
-                             [IIFish both:objB property:@"ageB" callBack:nil],
-                             ]];
-//
-    objA.ageA = 3.3;
-    
-    
-    
-     NSLog(@"a = %@ b = %@ ", @(objA.ageA),@( objB.ageB));
 }
 
 - (void)viewWillAppear:(BOOL)animated {

@@ -20,7 +20,7 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FishBindDemo-iOS/TestA.m"
-            timestampString = "531033910.365959"
+            timestampString = "531040970.89444"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "14"
@@ -36,13 +36,61 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FishBindDemo-iOS/TestA.m"
-            timestampString = "531033910.366053"
+            timestampString = "531040970.894573"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "18"
             endingLineNumber = "18"
             landmarkName = "-setName:"
             landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FishBind/IIFishBind.m"
+            timestampString = "531040970.894667"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "645"
+            endingLineNumber = "645"
+            landmarkName = "fakeForwardInvocation"
+            landmarkType = "9">
+            <Locations>
+               <Location
+                  shouldBeEnabled = "No"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "__fakeForwardInvocation_block_invoke"
+                  moduleName = "FishBindDemo-iOS"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/welcommand/FishBind/FishBind/IIFishBind.m"
+                  timestampString = "531040970.988246"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "645"
+                  endingLineNumber = "645"
+                  offsetFromSymbolStart = "431">
+               </Location>
+               <Location
+                  shouldBeEnabled = "No"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "__fakeForwardInvocation_block_invoke"
+                  moduleName = "FishBindDemo-iOS"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/welcommand/FishBind/FishBind/IIFishBind.m"
+                  timestampString = "531040970.991428"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "645"
+                  endingLineNumber = "645"
+                  offsetFromSymbolStart = "436">
+               </Location>
+            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>
