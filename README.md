@@ -154,7 +154,7 @@ FishBind可以轻松的实现对象间的绑定。支持绑定属性、方法、
 IIFish *fish1 = [IIFish post:A property:@"a"];
 ```
 
-然后，如果希望在a变化后，把a的值直接传给对象B的属性b（现阶段，属性a和b的类型必须相同）， 则使用
+然后，如果希望在a变化后，把a的值直接传给对象B的属性b， 则使用
 
 ```
 IIFish *fish2 = [IIFish observer:B property:@"b"];
@@ -281,6 +281,5 @@ IIFishCallBack 会把完整的信息交给你。IIFishCallBack结构如下
 
 - [ ] 兼容KVO
 - [ ] 适配UIKit
-- [ ] 属性类型自动适配
 - [ ] 自由的remove
 - [ ] 考虑加入优先级
