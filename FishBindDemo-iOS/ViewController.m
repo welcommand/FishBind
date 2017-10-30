@@ -31,10 +31,6 @@
     TestC *objC = [TestC new];
     TestD *objD = [TestD new];
     
-    objA.ageA = 3.3;
-    
-    id obj = [objA performSelector:@selector(ageA)];
-    
     [IIFishBind bindFishes:@[
                              [IIFish both:objA property:@"name"
                                  callBack:^(IIFishCallBack *callBack, id deadFish) {
@@ -125,12 +121,12 @@
     
     
     
-     NSLog(@"a = %@ b = %@ ", objA.ageA, objB.ageB);
+     NSLog(@"a = %@ b = %@ ", @(objA.ageA),@( objB.ageB));
 }
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
-    NSLog(@"======== 1 ===========");
+    NSLog(@"\n\n======== 1 ===========");
 }
 
 

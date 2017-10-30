@@ -559,26 +559,59 @@ static SEL IIFish_Property_AutoSETSelector(Class cls, const char *propertyName) 
     
     char firstC = propertyName[0];
     if (isalpha(firstC)) {
-        char c = toupper(firstC);
-        snprintf(s, strlen(propertyName) + 5, &c, propertyName + 1, ":");
+        snprintf(s, strlen(propertyName) + 5, "set%c%s:", toupper(firstC), propertyName + 1);
     } else {
-        snprintf(s, strlen(propertyName) + 5, propertyName, ":");
+        snprintf(s, strlen(propertyName) + 5, "set%s:", propertyName);
     }
     return sel_getUid(s);
 }
 
-static void IIFish_Property_AddFakeGETSelector(Class cls, const char *propertyName) {
-}
-
-static void IIFish_Property_AddFakeSETSelector(Class cls, const char *propertyName) {
-    SEL autoSET = IIFish_Property_AutoSETSelector(cls, propertyName);
-    Method autoSETMethod = class_getInstanceMethod(cls, autoSET);
-    if (autoSETMethod && method_getImplementation(autoSETMethod) == _objc_msgForward) {
-        
+static id IIFish_Property_GetValueForKey(id obj, NSString *propertyName) {
+    Class cls = object_getClass(obj);
+    
+    const char *propertyString = [propertyName UTF8String];
+    SEL propertySel = sel_getUid(propertyString);
+    Method propertyMethod = class_getInstanceMethod(cls, propertySel);
+    if (propertyMethod || method_getImplementation(propertyMethod) != _objc_msgForward) {
+        return [obj valueForKey:propertyName];
     }
     
+    size_t len = strlen(propertyString) + strlen(IIFish_Prefix) + 1;
+    char tempPropertyString[len];
+    snprintf(tempPropertyString, len, "%s%s", IIFish_Prefix, propertyString);
+    return [obj valueForKey:[NSString stringWithUTF8String:tempPropertyString]];
 }
 
+static void IIFish_Property_SetValueForKey(id obj, id value, NSString *propertyName) {
+    Class cls = object_getClass(obj);
+    
+    const char *propertyString = [propertyName UTF8String];
+    SEL propertySel = IIFish_Property_AutoSETSelector(cls, propertyString);
+    Method propertyMethod = class_getInstanceMethod(cls, propertySel);
+    if (!propertyMethod || method_getImplementation(propertyMethod) != _objc_msgForward) {
+         return [obj setValue:value forKey:propertyName];
+    }
+    
+    size_t len = strlen(propertyString) + strlen(IIFish_Prefix) + 1;
+    char tempPropertyString[len];
+    snprintf(tempPropertyString, len, "%s%s",  IIFish_Prefix, propertyString);
+    SEL tempPropertySel = IIFish_Property_AutoSETSelector(cls, tempPropertyString);
+    if (class_getInstanceMethod(cls, tempPropertySel)) {
+        return [obj setValue:value forKey:[NSString stringWithUTF8String:tempPropertyString]];
+    }
+    
+    const char *propertySelString = sel_getName(propertySel);
+    len = strlen(propertySelString) + strlen(IIFish_Prefix) + 1;
+    char fakePropertyString[len];
+    snprintf(fakePropertyString, len, "%s%s", IIFish_Prefix, propertySelString);
+    SEL fakePropertySel = sel_getUid(fakePropertyString);
+    Method fakePropertyMethod = class_getInstanceMethod(cls, fakePropertySel);
+    
+    class_addMethod(cls, tempPropertySel, method_getImplementation(fakePropertyMethod), method_getTypeEncoding(fakePropertyMethod));
+    return [obj setValue:value forKey:[NSString stringWithUTF8String:tempPropertyString]];
+}
+
+//static void IIFish_Property_AddDefaultMethod(Class cls, SEL setSel, SEL defaultSel)
 
 //static SEL IIFish_Property_SetSelector(Class cls, const char *propertyName) {
 //    objc_property_t property = class_getProperty(cls, propertyName);
@@ -660,7 +693,6 @@ static IIObserverAsset *IIFish_Class_Get_Asset(id object) {
 }
 
 void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
-    Class cls = object_getClass(self);
     SEL fakeSel = anInvocation.selector;
     NSString *orgSelString = [NSString stringWithFormat:@"%s%s", IIFish_Prefix,sel_getName(fakeSel)];
     anInvocation.selector = NSSelectorFromString(orgSelString);
@@ -676,24 +708,15 @@ void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
         info = [methodAsset objectForKey:key];
         observers = [[observerAsset objectForKey:key] allObjects];
     }];
-    
     //
 
     id propertyValue = nil;
-    
     if (info.length > 0) {
-        SEL postGetSel = IIFish_Property_GetSelector([self class], [info UTF8String]);
-        SEL postOrgGetSel = NSSelectorFromString([NSString stringWithFormat:@"%s%s", IIFish_Prefix, sel_getName(postGetSel)]);
-        SEL postSel = class_getInstanceMethod(cls, postOrgGetSel) ? postOrgGetSel : postGetSel;
-        propertyValue = [self performSelector:postSel];
+        propertyValue = IIFish_Property_GetValueForKey(self, info);
     }
-    
     for (IIFish *fish in observers) {
         if (info.length > 0 && fish.flag & IIFish_Property && propertyValue) {
-            SEL observerSetSel = IIFish_Property_SetSelector([fish.object class], [fish.property UTF8String]);
-            SEL observerOrgSetSel = NSSelectorFromString([NSString stringWithFormat:@"%s%s", IIFish_Prefix, sel_getName(observerSetSel)]);
-            SEL observerSel = class_getInstanceMethod(object_getClass(fish.object) , observerOrgSetSel) ? observerOrgSetSel : observerSetSel;
-            [fish.object performSelector:observerSel withObject:propertyValue];
+            IIFish_Property_SetValueForKey(fish.object, propertyValue, fish.property);
         } else if (fish.callBack) {
             IIFishCallBack *callBack = IIFish_Get_Callback(anInvocation);
             fish.callBack(callBack, [fish.object iiDeadFish]);
@@ -762,14 +785,13 @@ static void IIFish_Hook_Method(id object, SEL cmd) {
     if (IIFish_Class_getInstanceMethodWithoutSuper(cls, cmd)) {
         return;
     }
-    
     Method orgMethod = class_getInstanceMethod(cls, cmd);
     NSString *fakeSelStr = [NSString stringWithFormat:@"%s%s", IIFish_Prefix, sel_getName(cmd)];
     SEL fakeSel = NSSelectorFromString(fakeSelStr);
     const char *methodType = method_getTypeEncoding(orgMethod);
     
     class_addMethod(cls, fakeSel, method_getImplementation(orgMethod), methodType);
-    class_addMethod(cls, cmd, IIFish_msgForward(methodType), method_getTypeEncoding(orgMethod));
+    class_addMethod(cls, cmd, IIFish_msgForward(methodType),methodType);
 }
 
 
@@ -794,12 +816,11 @@ static pthread_mutex_t mutex;
             
             if (SETSelector) {
                 fish.selector = SETSelector;
-                IIFish_Hook_Method(cls, SETSelector);
+                IIFish_Hook_Method(fish.object, SETSelector);
             } else {
                 fish.selector = autoSETSelector;
+                IIFish_Hook_Method(fish.object, autoSETSelector);
             }
-            
-            IIFish_Hook_Method(cls,autoSETSelector);
         } else if (fish.flag & IIFish_Seletor) {// method
             IIFish_Hook_Class(fish.object);
             IIFish_Hook_Method(fish.object, fish.selector);

@@ -10,6 +10,12 @@
 
 @implementation TestA
 
+- (void)setUserName:(NSString *)name {
+    _name = name;
+}
 
+- (void)setName:(NSString *)name {
+    _name = name;
+}
 
 @end
