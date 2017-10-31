@@ -1,5 +1,12 @@
 # FishBind
 
+<p align='center'>
+	<img src="https://github.com/welcommand/FishBind/blob/master/FishBindIcon.png" width="70%" height="70%">
+</p>
+
+
+# 介绍
+
 FishBind可以轻松的实现对象间消息的绑定。支持绑定属性、方法、block。支持单向绑定&双向绑定。
 
 用这个做MVVM应该很愉快。
