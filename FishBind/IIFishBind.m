@@ -525,7 +525,7 @@ void iifish_block_forwardInvocation(id self, SEL _cmd, NSInvocation *invo) {
     IIObserverAsset *asseet = IIFish_Class_Get_Asset((__bridge id)block);
     __block NSArray *observers;
     NSString *key = [IIFishBlockObserverKey copy];
-    [asseet asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSSet<IIFish *> *> *observerAsset) {
+    [asseet asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSMutableSet<IIFish *> *> *observerAsset) {
         observers = [[observerAsset objectForKey:key] allObjects];
     }];
     
@@ -685,7 +685,7 @@ void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
     __block NSArray *observers;
     __block NSString *info;
     NSString *key = NSStringFromSelector(fakeSel);
-    [asseet asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSSet<IIFish *> *> *observerAsset) {
+    [asseet asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSMutableSet<IIFish *> *> *observerAsset) {
         info = [methodAsset objectForKey:key];
         if (!info) {
             observers = [[observerAsset objectForKey:key] allObjects];
@@ -828,7 +828,7 @@ static pthread_mutex_t mutex;
         NSString *key = fish.flag & IIFish_IsBlock ? IIFishBlockObserverKey : NSStringFromSelector(fish.selector);
         
         IIObserverAsset *asset = IIFish_Class_Get_Asset(fish.object);
-        [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSSet<IIFish *> *> *observerAsset) {
+        [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSMutableSet<IIFish *> *> *observerAsset) {
             if( fish.flag & IIFish_Property) {
                 [methodAsset addEntriesFromDictionary:@{key : fish.property}];
                 if (autoSeletor.length) {
@@ -857,7 +857,7 @@ static pthread_mutex_t mutex;
     if (!asset) return nil;
     
     __block NSArray *array = nil;
-    [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSSet<IIFish *> *> *observerAsset) {
+    [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSMutableSet<IIFish *> *> *observerAsset) {
         array = [methodAsset allKeys];
     }];
     return array;
@@ -868,7 +868,7 @@ static pthread_mutex_t mutex;
     if (!asset) return nil;
     
     __block NSArray *array = nil;
-    [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSSet<IIFish *> *> *observerAsset) {
+    [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSMutableSet<IIFish *> *> *observerAsset) {
         array = [[observerAsset objectForKey:key] allObjects];
     }];
     return array;
@@ -882,7 +882,7 @@ static pthread_mutex_t mutex;
     SEL autoSETSelector = IIFish_Property_AutoSETSelector([self class], [property UTF8String]);
     
     __block NSArray *a1,*a2;
-    [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSSet<IIFish *> *> *observerAsset) {
+    [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSMutableSet<IIFish *> *> *observerAsset) {
 
         if (SETSelector) {
              a1 = [[observerAsset objectForKey:NSStringFromSelector(SETSelector)] allObjects];
@@ -899,17 +899,62 @@ static pthread_mutex_t mutex;
     return array.count > 0 ? array : nil;
 }
 
-
-- (void)iifish_removeObserverFish:(IIFish *)fish {
+- (void)iifish_removeObserverWithKey:(NSString *)key {
+    IIObserverAsset *asset = IIFish_Class_Get_AssetNoInit(self);
+    if (!asset) return;
     
+    [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSMutableSet<IIFish *> *> *observerAsset) {
+        [observerAsset removeObjectForKey:key];
+    }];
 }
 
-- (void)iifish_removeObserverObject:(id)object {
+- (void)iifish_removeObserverWithObject:(id)object {
+    IIObserverAsset *asset = IIFish_Class_Get_AssetNoInit(self);
+    if (!asset) return;
     
+    [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSMutableSet<IIFish *> *> *observerAsset) {
+        [observerAsset enumerateKeysAndObjectsWithOptions:NSEnumerationReverse usingBlock:^(NSString * _Nonnull key, NSMutableSet<IIFish *> * _Nonnull value, BOOL * _Nonnull stop) {
+            [value enumerateObjectsUsingBlock:^(IIFish * _Nonnull obj, BOOL * _Nonnull stop) {
+                if (obj.object == object) {
+                    [value removeObject:obj];
+                    *stop = YES;
+                }
+            }];
+            if (value.count == 0) {
+                [observerAsset removeObjectForKey:key];
+            }
+        }];
+    }];
+}
+
+- (void)iifish_removeObserverWithkey:(NSString *)key andObject:(id)object {
+    IIObserverAsset *asset = IIFish_Class_Get_AssetNoInit(self);
+    if (!asset) return;
+    
+    [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSMutableSet<IIFish *> *> *observerAsset) {
+        NSMutableSet *value = [observerAsset valueForKey:key];
+        [value enumerateObjectsUsingBlock:^(IIFish * _Nonnull obj, BOOL * _Nonnull stop) {
+            if (obj.object == object) {
+                [value removeObject:obj];
+                *stop = YES;
+            }
+        }];
+        if (value.count == 0) {
+            [observerAsset removeObjectForKey:key];
+        }
+    }];
 }
 
 - (void)iifish_removeAllObserver {
+    IIObserverAsset *asset = IIFish_Class_Get_AssetNoInit(self);
+    if (!asset) return;
     
+    [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSMutableSet<IIFish *> *> *observerAsset) {
+        [[observerAsset allValues] enumerateObjectsUsingBlock:^(NSMutableSet<IIFish *> * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+            [obj removeAllObjects];
+        }];
+        [observerAsset removeAllObjects];
+    }];
 }
 
 @end
