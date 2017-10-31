@@ -4,6 +4,12 @@
 	<img src="https://github.com/welcommand/FishBind/blob/master/FishBindIcon.png" width="70%" height="70%">
 </p>
 
+<p align='center'>
+	<a href="https://img.shields.io/badge/Language-%20Objective--C%20-orange.svg"><img src="https://img.shields.io/badge/Language-%20Objective--C%20-orange.svg"></a>
+	<a href="https://img.shields.io/badge/platFrom-ios%20%7C%20osx-lightgrey.svg"><img src="https://img.shields.io/badge/platFrom-ios%20%7C%20osx-lightgrey.svg"></a>
+<img src="https://img.shields.io/badge/license-MIT-blue.svg">
+	</p>
+
 
 # 介绍
 
