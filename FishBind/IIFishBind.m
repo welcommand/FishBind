@@ -874,6 +874,29 @@ static pthread_mutex_t mutex;
     return array;
 }
 
+- (NSArray *)iifish_observersWithProperty:(NSString *)property {
+    IIObserverAsset *asset = IIFish_Class_Get_AssetNoInit(self);
+    if (!asset) return nil;
+    
+    SEL SETSelector = IIFish_Property_SETSelector([self class], [property UTF8String]);
+    SEL autoSETSelector = IIFish_Property_AutoSETSelector([self class], [property UTF8String]);
+    
+    __block NSMutableArray *array;
+    [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSSet<IIFish *> *> *observerAsset) {
+
+        if (SETSelector) {
+             NSArray *a = [[observerAsset objectForKey:NSStringFromSelector(SETSelector)] allObjects];
+            if (a) [array addObjectsFromArray:a];
+        }
+        if (autoSETSelector) {
+            NSArray *a = [[observerAsset objectForKey:NSStringFromSelector(autoSETSelector)] allObjects];
+            if (a) [array addObjectsFromArray:a];
+        }
+    }];
+    return array;
+}
+
+
 - (void)iifish_removeObserverFish:(IIFish *)fish {
     
 }
