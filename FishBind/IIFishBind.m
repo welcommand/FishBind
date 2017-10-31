@@ -945,6 +945,37 @@ static pthread_mutex_t mutex;
     }];
 }
 
+- (void)iifish_removeObserverWithProperty:(NSString *)property {
+    IIObserverAsset *asset = IIFish_Class_Get_AssetNoInit(self);
+    if (!asset) return;
+    
+    SEL SETSelector = IIFish_Property_SETSelector([self class], [property UTF8String]);
+    SEL autoSETSelector = IIFish_Property_AutoSETSelector([self class], [property UTF8String]);
+    
+    if (SETSelector) {
+        [self iifish_removeObserverWithKey:NSStringFromSelector(SETSelector)];
+    }
+    if (autoSETSelector) {
+        [self iifish_removeObserverWithKey:NSStringFromSelector(autoSETSelector)];
+    }
+    
+}
+
+- (void)iifish_removeObserverWithProperty:(NSString *)property andObject:(id)object {
+    IIObserverAsset *asset = IIFish_Class_Get_AssetNoInit(self);
+    if (!asset) return;
+    
+    SEL SETSelector = IIFish_Property_SETSelector([self class], [property UTF8String]);
+    SEL autoSETSelector = IIFish_Property_AutoSETSelector([self class], [property UTF8String]);
+    
+    if (SETSelector) {
+        [self iifish_removeObserverWithkey:NSStringFromSelector(SETSelector) andObject:object];
+    }
+    if (autoSETSelector) {
+        [self iifish_removeObserverWithkey:NSStringFromSelector(autoSETSelector) andObject:object];
+    }
+}
+
 - (void)iifish_removeAllObserver {
     IIObserverAsset *asset = IIFish_Class_Get_AssetNoInit(self);
     if (!asset) return;

@@ -52,9 +52,13 @@ typedef void(^IIFishCallBackBlock) (IIFishCallBack *callBack, id deadFish);
 - (NSArray *)iifish_observersWithProperty:(NSString *)property;
 
 - (void)iifish_removeObserverWithKey:(NSString *)key;
+- (void)iifish_removeObserverWithkey:(NSString *)key andObject:(id)object;
+
+- (void)iifish_removeObserverWithProperty:(NSString *)property;
+- (void)iifish_removeObserverWithProperty:(NSString *)property andObject:(id)object;
+
 - (void)iifish_removeObserverWithObject:(id)object;
 
-- (void)iifish_removeObserverWithkey:(NSString *)key andObject:(id)object;
 - (void)iifish_removeAllObserver;
 
 @end
