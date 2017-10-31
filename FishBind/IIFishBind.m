@@ -881,19 +881,22 @@ static pthread_mutex_t mutex;
     SEL SETSelector = IIFish_Property_SETSelector([self class], [property UTF8String]);
     SEL autoSETSelector = IIFish_Property_AutoSETSelector([self class], [property UTF8String]);
     
-    __block NSMutableArray *array;
+    __block NSArray *a1,*a2;
     [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSSet<IIFish *> *> *observerAsset) {
 
         if (SETSelector) {
-             NSArray *a = [[observerAsset objectForKey:NSStringFromSelector(SETSelector)] allObjects];
-            if (a) [array addObjectsFromArray:a];
+             a1 = [[observerAsset objectForKey:NSStringFromSelector(SETSelector)] allObjects];
         }
         if (autoSETSelector) {
-            NSArray *a = [[observerAsset objectForKey:NSStringFromSelector(autoSETSelector)] allObjects];
-            if (a) [array addObjectsFromArray:a];
+            a2 = [[observerAsset objectForKey:NSStringFromSelector(autoSETSelector)] allObjects];
         }
     }];
-    return array;
+    
+    NSMutableArray *array = [NSMutableArray new];
+    if (a1) [array addObjectsFromArray:a1];
+    if (a2) [array addObjectsFromArray:a2];
+    
+    return array.count > 0 ? array : nil;
 }
 
 
