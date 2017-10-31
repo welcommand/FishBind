@@ -212,9 +212,6 @@ static Method IIFish_Class_getInstanceMethodWithoutSuper(Class cls, SEL sel) {
     return m;
 }
 
-
-
-
 #pragma mark- Type Encodings
 // https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
 
@@ -672,6 +669,10 @@ static IIObserverAsset *IIFish_Class_Get_Asset(id object) {
     return asset;
 }
 
+static IIObserverAsset *IIFish_Class_Get_AssetNoInit(id object) {
+    return objc_getAssociatedObject(object, "IIFish_Class_Get_Asset");
+}
+
 void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
     SEL fakeSel = anInvocation.selector;
     NSString *orgSelString = [NSString stringWithFormat:@"%s%s", IIFish_Prefix,sel_getName(fakeSel)];
@@ -691,7 +692,10 @@ void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
         } else {
             NSMutableArray *array = [NSMutableArray new];
             for(NSString *k in [methodAsset allKeysForObject:info]) {
-                [array addObjectsFromArray:[[observerAsset objectForKey:k] allObjects]];
+                NSArray *a = [[observerAsset objectForKey:k] allObjects];
+                if(a) {
+                    [array addObjectsFromArray:a];
+                }
             }
             observers = array;
         }
@@ -782,16 +786,14 @@ static void IIFish_Hook_Method(id object, SEL cmd) {
     class_addMethod(cls, cmd, IIFish_msgForward(methodType),methodType);
 }
 
+static pthread_mutex_t mutex;
 
 @implementation IIFishBind
-
-static pthread_mutex_t mutex;
 
 + (void)bindFishes:(NSArray <IIFish*> *)fishes {
     
     pthread_mutex_init(&mutex, NULL);
     pthread_mutex_lock(&mutex);
-    
     
     
     for (IIFish *fish in fishes) {
@@ -821,6 +823,8 @@ static pthread_mutex_t mutex;
             IIFish_Hook_Block(fish.object);
         }
         
+        pthread_mutex_unlock(&mutex);
+        
         NSString *key = fish.flag & IIFish_IsBlock ? IIFishBlockObserverKey : NSStringFromSelector(fish.selector);
         
         IIObserverAsset *asset = IIFish_Class_Get_Asset(fish.object);
@@ -831,14 +835,55 @@ static pthread_mutex_t mutex;
                     [methodAsset addEntriesFromDictionary:@{autoSeletor : fish.property}];
                 }
             }
-            NSMutableSet *observerFishes = [NSMutableSet new];
+            
+            NSMutableSet *observerFishes = (NSMutableSet *)[observerAsset objectForKey:key];
+            if (!observerFishes) {
+                observerFishes = [NSMutableSet new];
+            }
             for (IIFish *f in fishes) {
                 if (f.flag & IIFish_Post ||  f == fish) continue;
                 [observerFishes addObject:f];
             }
-            [observerAsset addEntriesFromDictionary:@{key : observerFishes}];
+            [observerAsset setObject:observerFishes forKey:key];
         }];
     }
-    pthread_mutex_unlock(&mutex);
 }
+@end
+
+@implementation NSObject (IIFishBind)
+
+- (NSArray *)iifish_allKeys {
+    IIObserverAsset *asset = IIFish_Class_Get_AssetNoInit(self);
+    if (!asset) return nil;
+    
+    __block NSArray *array = nil;
+    [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSSet<IIFish *> *> *observerAsset) {
+        array = [methodAsset allKeys];
+    }];
+    return array;
+}
+
+- (NSArray *)iifish_observersWithKey:(NSString *)key {
+    IIObserverAsset *asset = IIFish_Class_Get_AssetNoInit(self);
+    if (!asset) return nil;
+    
+    __block NSArray *array = nil;
+    [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSSet<IIFish *> *> *observerAsset) {
+        array = [[observerAsset objectForKey:key] allObjects];
+    }];
+    return array;
+}
+
+- (void)iifish_removeObserverFish:(IIFish *)fish {
+    
+}
+
+- (void)iifish_removeObserverObject:(id)object {
+    
+}
+
+- (void)iifish_removeAllObserver {
+    
+}
+
 @end

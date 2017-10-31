@@ -82,6 +82,9 @@
     
     NSLog(@"a = %@ b = %@ ", @(objA.ageA),@( objB.ageB));
     
+    NSLog(@"%@",[objA iifish_allKeys]);
+    NSLog(@"%@",[objA iifish_observersWithKey:@"setAgeA:"]);
+    
     // 绑定block
     
     CGFloat (^testBlock)(CGFloat i, CGFloat j) = ^(CGFloat i, CGFloat j) {

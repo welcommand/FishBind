@@ -19,7 +19,7 @@ typedef void(^IIFishCallBackBlock) (IIFishCallBack *callBack, id deadFish);
 
 @interface IIFish : NSObject
 @property (nonatomic, assign) NSInteger flag;
-@property (nonatomic, assign) id object;
+@property (nonatomic, weak) id object;
 @property (nonatomic, copy) NSString *property;
 @property (nonatomic, assign) SEL selector;
 @property (nonatomic, copy) IIFishCallBackBlock callBack;
@@ -43,4 +43,15 @@ typedef void(^IIFishCallBackBlock) (IIFishCallBack *callBack, id deadFish);
 
 @interface IIFishBind : NSObject
 + (void)bindFishes:(NSArray <IIFish*> *)fishes;
+@end
+
+@interface NSObject (IIFishBind)
+
+- (NSArray *)iifish_allKeys;
+- (NSArray *)iifish_observersWithKey:(NSString *)key;
+
+- (void)iifish_removeObserverFish:(IIFish *)fish;
+- (void)iifish_removeObserverObject:(id)object;
+- (void)iifish_removeAllObserver;
+
 @end
