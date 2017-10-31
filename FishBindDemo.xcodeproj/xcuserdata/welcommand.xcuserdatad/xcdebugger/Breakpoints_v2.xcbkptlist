@@ -48,49 +48,17 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            shouldBeEnabled = "No"
+            shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "FishBind/IIFishBind.m"
-            timestampString = "531040970.894667"
+            filePath = "FishBindDemo-iOS/ViewController.m"
+            timestampString = "531111423.774268"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "645"
-            endingLineNumber = "645"
-            landmarkName = "fakeForwardInvocation"
-            landmarkType = "9">
-            <Locations>
-               <Location
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "__fakeForwardInvocation_block_invoke"
-                  moduleName = "FishBindDemo-iOS"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/welcommand/FishBind/FishBind/IIFishBind.m"
-                  timestampString = "531040970.988246"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "645"
-                  endingLineNumber = "645"
-                  offsetFromSymbolStart = "431">
-               </Location>
-               <Location
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "__fakeForwardInvocation_block_invoke"
-                  moduleName = "FishBindDemo-iOS"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/welcommand/FishBind/FishBind/IIFishBind.m"
-                  timestampString = "531040970.991428"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "645"
-                  endingLineNumber = "645"
-                  offsetFromSymbolStart = "436">
-               </Location>
-            </Locations>
+            startingLineNumber = "40"
+            endingLineNumber = "40"
+            landmarkName = "-viewDidLoad"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>
