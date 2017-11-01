@@ -28,6 +28,7 @@
 
     TestA *objA = [TestA new];
     TestB *objB = [TestB new];
+    TestC *objC = [TestC new];
     TestD *objD = [TestD new];
     
     [IIFishBind bindFishes:@[
