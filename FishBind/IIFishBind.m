@@ -205,6 +205,7 @@ static Method IIFish_Class_getInstanceMethodWithoutSuper(Class cls, SEL sel) {
     for (unsigned int i = 0; i < count; i ++) {
         if (method_getName(methods[i]) == sel) {
             m = methods[i];
+            break;
         }
     }
     
