@@ -130,7 +130,9 @@ FishBind可以轻松的实现对象间消息的绑定。支持绑定属性、方
 
 ## 安装
 
-人肉 IIFishBind.h&.m 到项目 （再做几个功能就加pod）
+```
+pod 'FishBind'
+```
 
 
 ## 使用
