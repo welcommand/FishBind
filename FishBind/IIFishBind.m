@@ -13,12 +13,12 @@
 
 static char const* IIFish_Prefix = "IIFish_";
 
-typedef NS_OPTIONS(NSInteger, IIFishFlage) {
-    IIFish_IsBlock = (1 << 2),
-    IIFish_Post =  (1 << 10),
-    IIFish_Observer  =    (1 << 11),
-    IIFish_Property = (1 << 20),
-    IIFish_Seletor = (1 << 21)
+typedef NS_OPTIONS(NSUInteger, IIFishFlage) {
+    IIFish_IsBlock = (1 << 0),
+    IIFish_Post =  (1 << 1),
+    IIFish_Observer  =    (1 << 2),
+    IIFish_Property = (1 << 3),
+    IIFish_Seletor = (1 << 4)
 };
 
 
@@ -28,8 +28,18 @@ typedef NS_OPTIONS(NSInteger, IIFishFlage) {
 }
 @end
 
+
 #pragma mark-
 #pragma mark- IIFish
+
+@interface IIFish ()
+@property (nonatomic, assign) IIFishFlage flag;
+@property (nonatomic, weak) id object;
+@property (nonatomic, copy) NSString *property;
+@property (nonatomic, assign) SEL selector;
+@property (nonatomic, copy) IIFishCallBackBlock callBack;
+@end
+
 
 @implementation IIFish
 
@@ -65,6 +75,7 @@ typedef NS_OPTIONS(NSInteger, IIFishFlage) {
     return [self fish:object property:nil selector:nil callBack:callBack flag:IIFish_Observer | IIFish_Seletor];
 }
 @end
+
 
 #pragma mark-
 #pragma mark- Dead Fish
@@ -162,6 +173,7 @@ typedef NS_OPTIONS(NSInteger, IIFishFlage) {
     return deadFish;
 }
 @end
+
 
 #pragma mark-
 #pragma mark- ObserverAsset
