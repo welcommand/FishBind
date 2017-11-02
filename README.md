@@ -9,6 +9,7 @@
 	<a href="http://cocoadocs.org/docsets/"><img src="http://img.shields.io/cocoapods/v/FishBind.svg"></a>
 	<a href="https://img.shields.io/badge/platFrom-ios%20%7C%20osx%20%7C%20watchos%20%7C%20tvos-lightgrey.svg"><img src="https://img.shields.io/badge/platFrom-ios%20%7C%20osx%20%7C%20watchos%20%7C%20tvos-lightgrey.svg"></a>
 <img src="https://img.shields.io/badge/license-MIT-blue.svg">
+	<a href="https://saythanks.io/to/welcommand"><img src="https://img.shields.io/badge/Say%20Thanks-!-1EAEDB.svg"></a>
 	</p>
 
 
