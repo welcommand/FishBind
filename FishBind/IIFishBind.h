@@ -74,5 +74,5 @@ typedef void(^IIFishWatchCallBackBlock) (IIFishCallBack *callBack);
 
 @interface NSObject (IIFishWatch)
 + (void)iifish_watchMethodsoptions:(IIFishWatchOptions)options callback:(IIFishWatchCallBackBlock)callback;
-- (void)iifish_watchMethod:(IIFishWatchCallBackBlock)callback;
+- (void)iifish_watchMethods:(IIFishWatchCallBackBlock)callback;
 @end
