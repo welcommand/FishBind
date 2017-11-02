@@ -60,3 +60,19 @@ typedef void(^IIFishCallBackBlock) (IIFishCallBack *callBack, id deadFish);
 @end
 
 
+//#####
+//##### hook all methods
+//#####
+
+
+typedef NS_OPTIONS(NSUInteger, IIFishWatchOptions) {
+    IIFishWatchOptionsInstanceMethod = (1 << 0),
+    IIFishWatchOptionsClassMethod = (1 << 1)
+};
+
+typedef void(^IIFishWatchCallBackBlock) (IIFishCallBack *callBack);
+
+@interface NSObject (IIFishWatch)
++ (void)iifish_watchMethodsoptions:(IIFishWatchOptions)options callback:(IIFishWatchCallBackBlock)callback;
+- (void)iifish_watchMethod:(IIFishWatchCallBackBlock)callback;
+@end

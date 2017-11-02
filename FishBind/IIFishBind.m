@@ -12,6 +12,7 @@
 #import <objc/message.h>
 
 static char const* IIFish_Prefix = "IIFish_";
+static char const* IIFishWatch = "IIFishWatch";
 
 typedef NS_OPTIONS(NSUInteger, IIFishFlage) {
     IIFish_IsBlock = (1 << 0),
@@ -39,7 +40,6 @@ typedef NS_OPTIONS(NSUInteger, IIFishFlage) {
 @property (nonatomic, assign) SEL selector;
 @property (nonatomic, copy) IIFishCallBackBlock callBack;
 @end
-
 
 @implementation IIFish
 
@@ -686,15 +686,27 @@ static IIObserverAsset *IIFish_Class_Get_AssetNoInit(id object) {
     return objc_getAssociatedObject(object, "IIFish_Class_Get_Asset");
 }
 
+static void IIFish_Class_AssetClear(id object) {
+    objc_setAssociatedObject(object, "IIFish_Class_Get_Asset", nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
 void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
     SEL fakeSel = anInvocation.selector;
     NSString *orgSelString = [NSString stringWithFormat:@"%s%s", IIFish_Prefix,sel_getName(fakeSel)];
     anInvocation.selector = NSSelectorFromString(orgSelString);
     [anInvocation invoke];
     
+    IIFishWatchCallBackBlock callback = objc_getAssociatedObject(self, IIFishWatch);
+    if (callback) {
+        callback(IIFish_Get_Callback(anInvocation));
+    }
     
     // asset
-    IIObserverAsset *asseet = IIFish_Class_Get_Asset(self);
+    IIObserverAsset *asseet = IIFish_Class_Get_AssetNoInit(self);
+    if (!asseet) {
+        return;
+    }
+    
     __block NSArray *observers;
     __block NSString *info;
     NSString *key = NSStringFromSelector(fakeSel);
@@ -916,15 +928,24 @@ static pthread_mutex_t mutex;
     IIObserverAsset *asset = IIFish_Class_Get_AssetNoInit(self);
     if (!asset) return;
     
+    __block BOOL shouldClearAsset = NO;
     [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSMutableSet<IIFish *> *> *observerAsset) {
         [observerAsset removeObjectForKey:key];
+        if (observerAsset.count == 0) {
+            shouldClearAsset = YES;
+        }
     }];
+    
+    if (shouldClearAsset) {
+        IIFish_Class_AssetClear(self);
+    }
 }
 
 - (void)iifish_removeObserverWithObject:(id)object {
     IIObserverAsset *asset = IIFish_Class_Get_AssetNoInit(self);
     if (!asset) return;
     
+    __block BOOL shouldClearAsset = NO;
     [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSMutableSet<IIFish *> *> *observerAsset) {
         [observerAsset enumerateKeysAndObjectsWithOptions:NSEnumerationReverse usingBlock:^(NSString * _Nonnull key, NSMutableSet<IIFish *> * _Nonnull value, BOOL * _Nonnull stop) {
             [value enumerateObjectsUsingBlock:^(IIFish * _Nonnull obj, BOOL * _Nonnull stop) {
@@ -936,14 +957,22 @@ static pthread_mutex_t mutex;
             if (value.count == 0) {
                 [observerAsset removeObjectForKey:key];
             }
+            if (observerAsset.count == 0) {
+                shouldClearAsset = YES;
+            }
         }];
     }];
+    
+    if (shouldClearAsset) {
+        IIFish_Class_AssetClear(self);
+    }
 }
 
 - (void)iifish_removeObserverWithkey:(NSString *)key andObject:(id)object {
     IIObserverAsset *asset = IIFish_Class_Get_AssetNoInit(self);
     if (!asset) return;
     
+    __block BOOL shouldClearAsset = NO;
     [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSMutableSet<IIFish *> *> *observerAsset) {
         NSMutableSet *value = [observerAsset valueForKey:key];
         [value enumerateObjectsUsingBlock:^(IIFish * _Nonnull obj, BOOL * _Nonnull stop) {
@@ -955,7 +984,14 @@ static pthread_mutex_t mutex;
         if (value.count == 0) {
             [observerAsset removeObjectForKey:key];
         }
+        if (observerAsset.count == 0) {
+            shouldClearAsset = YES;
+        }
     }];
+    
+    if (shouldClearAsset) {
+        IIFish_Class_AssetClear(self);
+    }
 }
 
 - (void)iifish_removeObserverWithProperty:(NSString *)property {
@@ -999,6 +1035,87 @@ static pthread_mutex_t mutex;
         }];
         [observerAsset removeAllObjects];
     }];
+    IIFish_Class_AssetClear(self);
+}
+@end
+
+@implementation NSObject (IIFishWatch)
+
+static NSSet *IIFish_MethodBlackList() {
+    static NSSet *blackLlist = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        blackLlist = [NSSet setWithArray:@[@"retain",
+                                           @"release",
+                                           @"autorelease",
+                                           @"forwardInvocation:",
+                                           @"methodSignatureForSelector:",
+                                           @"forwardingTargetForSelector:",
+                                           @"respondsToSelector:"]];
+    });
+    return blackLlist;
 }
 
+static void IIFish_HookAllMethods(Class targetClass, Method *methods, unsigned int count) {
+    NSSet *blackList = IIFish_MethodBlackList();
+    for (unsigned int i = 0; i < count; i++) {
+        Method m = methods[i];
+        SEL selector = method_getName(m);
+        const char *selectorSrting = sel_getName(selector);
+        if (strncmp(selectorSrting, IIFish_Prefix, strlen(IIFish_Prefix)) == 0) continue;
+        
+        if ([blackList containsObject:NSStringFromSelector(selector)]) continue;
+        
+        char hookSelectorString[strlen(selectorSrting) + strlen(IIFish_Prefix) + 1];
+        snprintf(hookSelectorString, strlen(selectorSrting) + strlen(IIFish_Prefix) + 1, "%s%s",IIFish_Prefix, selectorSrting);
+        SEL hookSelector = sel_getUid(hookSelectorString);
+        if (class_getInstanceMethod(targetClass, hookSelector)) continue;
+
+        class_addMethod(targetClass, hookSelector, method_getImplementation(m), method_getTypeEncoding(m));
+        method_setImplementation(m, _objc_msgForward);
+    }
+    
+    Method t = class_getInstanceMethod([NSObject class], @selector(forwardInvocation:));
+    
+    BOOL success = class_addMethod(targetClass, @selector(forwardInvocation:), (IMP)fakeForwardInvocation, method_getTypeEncoding(t));
+    if (!success) {
+        class_replaceMethod(targetClass, @selector(forwardInvocation:), (IMP)fakeForwardInvocation, method_getTypeEncoding(t));
+    }
+    
+}
+
++ (void)iifish_watchMethodsoptions:(IIFishWatchOptions)options callback:(IIFishWatchCallBackBlock)callback {
+    
+    NSParameterAssert(callback);
+    
+    if (strncmp(class_getName(self), IIFish_Prefix, strlen(IIFish_Prefix)) == 0) return;
+    objc_setAssociatedObject(self, IIFishWatch, callback, OBJC_ASSOCIATION_COPY_NONATOMIC);
+    
+    if (options & IIFishWatchOptionsInstanceMethod) {
+        unsigned int count;
+        Method *methods = class_copyMethodList(self, &count);
+        IIFish_HookAllMethods(self, methods, count);
+        free(methods);
+    }
+    
+    if (options & IIFishWatchOptionsClassMethod) {
+        Class cls = object_getClass(self);
+        unsigned int count;
+        Method *methods = class_copyMethodList(cls, &count);
+        IIFish_HookAllMethods(cls, methods, count);
+        free(methods);
+    }
+}
+
+- (void)iifish_watchMethod:(IIFishWatchCallBackBlock)callback {
+    NSParameterAssert(callback);
+    
+    IIFish_Hook_Class(self);
+    objc_setAssociatedObject(self, IIFishWatch, callback, OBJC_ASSOCIATION_COPY_NONATOMIC);
+    
+    unsigned int count;
+    Method *methods = class_copyMethodList([self class], &count);
+    IIFish_HookAllMethods(object_getClass(self), methods, count);
+    free(methods);
+}
 @end
