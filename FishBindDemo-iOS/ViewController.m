@@ -87,43 +87,50 @@
     NSLog(@"%@",[objA iifish_observersWithKey:@"setAgeA:"]);
     
     // 绑定block
-    
-    CGFloat (^testBlock)(CGFloat i, CGFloat j) = ^(CGFloat i, CGFloat j) {
-        return i + j;
-    };
-    
-    [IIFishBind bindFishes:@[
-                             [IIFish postBlock:testBlock],
-                             [IIFish observer:self
-                                     callBack:^(IIFishCallBack *callBack, id deadFish) {
-                                         NSLog(@"%@ + %@ = %@", callBack.args[0], callBack.args[1], callBack.resule);
-                                         // 3.1 + 4.1 = 7.199999999999999
-                                     }]
-                             ]];
-    
-    
-    CGFloat value = testBlock (3.1, 4.1);
-    
-    NSLog(@"value = %@", @(value));
+//    
+//    CGFloat (^testBlock)(CGFloat i, CGFloat j) = ^(CGFloat i, CGFloat j) {
+//        return i + j;
+//    };
+//    
+//    [IIFishBind bindFishes:@[
+//                             [IIFish postBlock:testBlock],
+//                             [IIFish observer:self
+//                                     callBack:^(IIFishCallBack *callBack, id deadFish) {
+//                                         NSLog(@"%@ + %@ = %@", callBack.args[0], callBack.args[1], callBack.resule);
+//                                         // 3.1 + 4.1 = 7.199999999999999
+//                                     }]
+//                             ]];
+//    
+//    
+//    CGFloat value = testBlock (3.1, 4.1);
+//    
+//    NSLog(@"value = %@", @(value));
     // value = 7.199999999999999
     
     // 单向绑定
     
-    [IIFishBind bindFishes:@[
-                             [IIFish post:self selector:@selector(viewDidAppear:)],
-                             [IIFish observer:self
-                                     callBack:^(IIFishCallBack *callBack, id deadFish) {
-                                          NSLog(@"======== 4 ===========");
-                                     }]
-                             ]];
+//    [IIFishBind bindFishes:@[
+//                             [IIFish post:self selector:@selector(viewDidAppear:)],
+//                             [IIFish observer:self
+//                                     callBack:^(IIFishCallBack *callBack, id deadFish) {
+//                                          NSLog(@"======== 4 ===========");
+//                                     }]
+//                             ]];
+//
+//    [IIFishBind bindFishes:@[
+//                             [IIFish post:self selector:@selector(viewWillAppear:)],
+//                             [IIFish observer:self
+//                                     callBack:^(IIFishCallBack *callBack, id deadFish) {
+//                                         NSLog(@"======== 2 ===========");
+//                                     }]
+//                             ]];
     
-    [IIFishBind bindFishes:@[
-                             [IIFish post:self selector:@selector(viewWillAppear:)],
-                             [IIFish observer:self
-                                     callBack:^(IIFishCallBack *callBack, id deadFish) {
-                                         NSLog(@"======== 2 ===========");
-                                     }]
-                             ]];
+    //方法调用观察
+    [UIView iifish_watchMethodsoptions:IIFishWatchOptionsInstanceMethod callback:^(IIFishCallBack *callBack) {
+        NSLog(@"======%@",callBack.selector);
+    }];
+    
+    __unused NSString *s = [objC fullName];
 }
 
 - (void)viewWillAppear:(BOOL)animated {

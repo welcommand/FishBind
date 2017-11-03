@@ -273,7 +273,9 @@ argBox = @(arg);\
                 argBox = NSStringFromSelector(arg);
             } break;
             case '{': {
-                void *arg;
+                NSUInteger valueSize = 0;
+                NSGetSizeAndAlignment(argType, &valueSize, NULL);
+                unsigned char arg[valueSize];
                 [invocation getReturnValue:&arg];
                 argBox = [NSValue value:arg withObjCType:argType];
             } break;
@@ -337,7 +339,9 @@ argBox = @(arg);\
                     argBox = NSStringFromSelector(arg);
                 } break;
                 case '{': {
-                    void *arg;
+                    NSUInteger valueSize = 0;
+                    NSGetSizeAndAlignment(argType, &valueSize, NULL);
+                    unsigned char arg[valueSize];
                     [invocation getArgument:&arg atIndex:i];
                     argBox = [NSValue value:arg withObjCType:argType];
                 } break;
@@ -358,7 +362,7 @@ argBox = @(arg);\
 
 static IIFishCallBack* IIFish_Get_Callback(NSInvocation *invo) {
     IIFishCallBack *callBack = [[IIFishCallBack alloc] init];
-    callBack.tager = invo.target;
+    //callBack.tager = invo.target;
     
     if ([callBack.tager isKindOfClass:NSClassFromString(@"NSBlock")]) {
         callBack.args = IIFish_TypeEncoding_Get_MethodArgs(invo,1);
@@ -690,15 +694,19 @@ static void IIFish_Class_AssetClear(id object) {
     objc_setAssociatedObject(object, "IIFish_Class_Get_Asset", nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
+static void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
     SEL fakeSel = anInvocation.selector;
-    NSString *orgSelString = [NSString stringWithFormat:@"%s%s", IIFish_Prefix,sel_getName(fakeSel)];
-    anInvocation.selector = NSSelectorFromString(orgSelString);
+    const char *fakeSelString = sel_getName(fakeSel);
+    char orgSelString[strlen(fakeSelString) + strlen(IIFish_Prefix) + 1];
+    snprintf(orgSelString, strlen(fakeSelString) + strlen(IIFish_Prefix) + 1, "%s%s",IIFish_Prefix, fakeSelString);
+    
+    NSLog(@"===%s",fakeSelString);
+    anInvocation.selector = sel_getUid(orgSelString);
     [anInvocation invoke];
     
-    IIFishWatchCallBackBlock callback = objc_getAssociatedObject(self, IIFishWatch);
+    IIFishWatchCallBackBlock callback = objc_getAssociatedObject([self class], IIFishWatch);
     if (callback) {
-        callback(IIFish_Get_Callback(anInvocation));
+        //callback(IIFish_Get_Callback(anInvocation));
     }
     
     // asset
@@ -1051,7 +1059,11 @@ static NSSet *IIFish_MethodBlackList() {
                                            @"forwardInvocation:",
                                            @"methodSignatureForSelector:",
                                            @"forwardingTargetForSelector:",
-                                           @"respondsToSelector:"]];
+                                           @"respondsToSelector:",
+                                           @".cxx_destruct",
+                                           @"dealloc",
+                                           @"_tryRetain",
+                                           @"_isDeallocating"]];
     });
     return blackLlist;
 }
@@ -1072,7 +1084,7 @@ static void IIFish_HookAllMethods(Class targetClass, Method *methods, unsigned i
         if (class_getInstanceMethod(targetClass, hookSelector)) continue;
 
         class_addMethod(targetClass, hookSelector, method_getImplementation(m), method_getTypeEncoding(m));
-        method_setImplementation(m, _objc_msgForward);
+        method_setImplementation(m, IIFish_msgForward(method_getTypeEncoding(m)));
     }
     
     Method t = class_getInstanceMethod([NSObject class], @selector(forwardInvocation:));
@@ -1107,7 +1119,7 @@ static void IIFish_HookAllMethods(Class targetClass, Method *methods, unsigned i
     }
 }
 
-- (void)iifish_watchMethod:(IIFishWatchCallBackBlock)callback {
+- (void)iifish_watchMethods:(IIFishWatchCallBackBlock)callback {
     NSParameterAssert(callback);
     
     IIFish_Hook_Class(self);
@@ -1118,4 +1130,5 @@ static void IIFish_HookAllMethods(Class targetClass, Method *methods, unsigned i
     IIFish_HookAllMethods(object_getClass(self), methods, count);
     free(methods);
 }
+
 @end
