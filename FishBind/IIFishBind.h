@@ -12,7 +12,7 @@
 @property (nonatomic, weak) id tager;
 @property (nonatomic, copy) NSString *selector;
 @property (nonatomic, strong) NSArray *args;
-@property (nonatomic, strong) id resule;
+@property (nonatomic, assign) id resule;
 @end
 
 typedef void(^IIFishCallBackBlock) (IIFishCallBack *callBack, id deadFish);

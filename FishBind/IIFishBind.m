@@ -244,6 +244,7 @@ argBox = @(arg);\
             IIFish_GetReturnValueInBox('s', short)
             IIFish_GetReturnValueInBox('l', long)
             IIFish_GetReturnValueInBox('q', long long)
+            IIFish_GetReturnValueInBox('^', long long)
             IIFish_GetReturnValueInBox('C', unsigned char)
             IIFish_GetReturnValueInBox('I', unsigned int)
             IIFish_GetReturnValueInBox('S', unsigned short)
@@ -258,9 +259,9 @@ argBox = @(arg);\
                 argBox = [[NSString alloc] initWithUTF8String:arg];
             } break;
             case '@': {
-                id arg;
+                __weak id arg;
                 [invocation getReturnValue:&arg];
-                argBox = arg;
+                argBox = ^(){return arg;};
             } break;
             case '#': {
                 Class arg;
@@ -310,6 +311,7 @@ argBox = @(arg);\
                 IIFish_GetArgumentValueInBox('s', short)
                 IIFish_GetArgumentValueInBox('l', long)
                 IIFish_GetArgumentValueInBox('q', long long)
+                IIFish_GetArgumentValueInBox('^', long long)
                 IIFish_GetArgumentValueInBox('C', unsigned char)
                 IIFish_GetArgumentValueInBox('I', unsigned int)
                 IIFish_GetArgumentValueInBox('S', unsigned short)
@@ -324,9 +326,9 @@ argBox = @(arg);\
                     argBox = [[NSString alloc] initWithUTF8String:arg];
                 } break;
                 case '@': {
-                    id arg;
+                    __weak id arg;
                     [invocation getArgument:&arg atIndex:i];
-                    argBox = arg;
+                    argBox = ^(){return arg;};
                 } break;
                 case '#': {
                     Class arg;
@@ -362,17 +364,16 @@ argBox = @(arg);\
 
 static IIFishCallBack* IIFish_Get_Callback(NSInvocation *invo) {
     IIFishCallBack *callBack = [[IIFishCallBack alloc] init];
-    //callBack.tager = invo.target;
-    
+    callBack.tager = invo.target;
+
     if ([callBack.tager isKindOfClass:NSClassFromString(@"NSBlock")]) {
         callBack.args = IIFish_TypeEncoding_Get_MethodArgs(invo,1);
     } else {
         callBack.selector = NSStringFromSelector(invo.selector);
         callBack.args = IIFish_TypeEncoding_Get_MethodArgs(invo,2);
     }
-    
+
     callBack.resule = IIFish_TypeEncoding_Get_ReturnValueInBox(invo);
-    
     return callBack;
 }
 
@@ -700,13 +701,12 @@ static void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation)
     char orgSelString[strlen(fakeSelString) + strlen(IIFish_Prefix) + 1];
     snprintf(orgSelString, strlen(fakeSelString) + strlen(IIFish_Prefix) + 1, "%s%s",IIFish_Prefix, fakeSelString);
     
-    NSLog(@"===%s",fakeSelString);
     anInvocation.selector = sel_getUid(orgSelString);
     [anInvocation invoke];
     
     IIFishWatchCallBackBlock callback = objc_getAssociatedObject([self class], IIFishWatch);
     if (callback) {
-        //callback(IIFish_Get_Callback(anInvocation));
+        callback(IIFish_Get_Callback(anInvocation));
     }
     
     // asset
