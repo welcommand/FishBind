@@ -296,6 +296,3 @@ IIFishCallBack 会把完整的信息交给你。IIFishCallBack结构如下
 ## todo
 
 - [ ] 兼容KVO
-- [ ] 适配UIKit
-- [ ] post 暂停功能
-- [ ] 考虑加入优先级
