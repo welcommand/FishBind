@@ -807,9 +807,6 @@ static void IIFish_Hook_Method(id object, SEL cmd) {
     
     Class cls = object_getClass(object);
     
-    if (IIFish_Class_getInstanceMethodWithoutSuper(cls, cmd)) {
-        return;
-    }
     Method orgMethod = class_getInstanceMethod(cls, cmd);
     NSString *fakeSelStr = [NSString stringWithFormat:@"%s%s", IIFish_Prefix, sel_getName(cmd)];
     SEL fakeSel = NSSelectorFromString(fakeSelStr);
