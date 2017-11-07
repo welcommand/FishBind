@@ -1065,7 +1065,7 @@ static NSSet *IIFish_MethodBlackList() {
     return blackLlist;
 }
 
-static void IIFish_HookAllMethods(Class targetClass, Method *methods, unsigned int count) {
+static void IIFish_HookAllMethods(Class targetClass, Method *methods, unsigned int count, BOOL withoutNSObject) {
     NSSet *blackList = IIFish_MethodBlackList();
     for (unsigned int i = 0; i < count; i++) {
         Method m = methods[i];
@@ -1074,6 +1074,7 @@ static void IIFish_HookAllMethods(Class targetClass, Method *methods, unsigned i
         if (strncmp(selectorSrting, IIFish_Prefix, strlen(IIFish_Prefix)) == 0) continue;
         
         if ([blackList containsObject:NSStringFromSelector(selector)]) continue;
+        if (withoutNSObject && class_getInstanceMethod([NSObject class], selector)) continue;
         
         char hookSelectorString[strlen(selectorSrting) + strlen(IIFish_Prefix) + 1];
         snprintf(hookSelectorString, strlen(selectorSrting) + strlen(IIFish_Prefix) + 1, "%s%s",IIFish_Prefix, selectorSrting);
@@ -1093,17 +1094,19 @@ static void IIFish_HookAllMethods(Class targetClass, Method *methods, unsigned i
     
 }
 
-+ (void)iifish_watchMethodsoptions:(IIFishWatchOptions)options callback:(IIFishWatchCallBackBlock)callback {
++ (void)iifish_watchMethodsOptions:(IIFishWatchOptions)options callback:(IIFishWatchCallBackBlock)callback {
     
     NSParameterAssert(callback);
     
     if (strncmp(class_getName(self), IIFish_Prefix, strlen(IIFish_Prefix)) == 0) return;
     objc_setAssociatedObject(self, IIFishWatch, callback, OBJC_ASSOCIATION_COPY_NONATOMIC);
     
+    BOOL withoutNSObject = options & IIFishWatchOptionsWithoutNSObject;
+    
     if (options & IIFishWatchOptionsInstanceMethod) {
         unsigned int count;
         Method *methods = class_copyMethodList(self, &count);
-        IIFish_HookAllMethods(self, methods, count);
+        IIFish_HookAllMethods(self, methods, count, withoutNSObject);
         free(methods);
     }
     
@@ -1111,12 +1114,12 @@ static void IIFish_HookAllMethods(Class targetClass, Method *methods, unsigned i
         Class cls = object_getClass(self);
         unsigned int count;
         Method *methods = class_copyMethodList(cls, &count);
-        IIFish_HookAllMethods(cls, methods, count);
+        IIFish_HookAllMethods(cls, methods, count, withoutNSObject);
         free(methods);
     }
 }
 
-- (void)iifish_watchMethods:(IIFishWatchCallBackBlock)callback {
+- (void)iifish_watchMethodsOptions:(IIFishWatchOptions)options callback:(IIFishWatchCallBackBlock)callback {
     NSParameterAssert(callback);
     
     IIFish_Hook_Class(self);
@@ -1124,7 +1127,7 @@ static void IIFish_HookAllMethods(Class targetClass, Method *methods, unsigned i
     
     unsigned int count;
     Method *methods = class_copyMethodList([self class], &count);
-    IIFish_HookAllMethods(object_getClass(self), methods, count);
+    IIFish_HookAllMethods(object_getClass(self), methods, count, options & IIFishWatchOptionsWithoutNSObject);
     free(methods);
 }
 

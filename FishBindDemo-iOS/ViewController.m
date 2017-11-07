@@ -126,9 +126,7 @@
 //                             ]];
     
     //方法调用观察
-    [UIView iifish_watchMethodsoptions:IIFishWatchOptionsInstanceMethod callback:^(IIFishCallBack *callBack) {
-        //NSLog(@"======%@",callBack.selector);
-    }];
+
     
     __unused NSString *s = [objC fullName];
 }
