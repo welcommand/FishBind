@@ -1,3 +1,4 @@
+
 //
 //  IIFishBind.m
 //  FishBindDemo
@@ -253,34 +254,34 @@ argBox = @(arg);\
             IIFish_GetReturnValueInBox('f', float)
             IIFish_GetReturnValueInBox('d', double)
             IIFish_GetReturnValueInBox('B', BOOL)
-            case '*': {
-                char *arg;
-                [invocation getReturnValue:&arg];
-                argBox = [[NSString alloc] initWithUTF8String:arg];
-            } break;
-            case '@': {
-                __weak id arg;
-                [invocation getReturnValue:&arg];
-                argBox = ^(){return arg;};
-            } break;
-            case '#': {
-                Class arg;
-                [invocation getReturnValue:&arg];
-                argBox = NSStringFromClass(arg);
-            } break;
-            case ':': {
-                SEL arg;
-                [invocation getReturnValue:&arg];
-                argBox = NSStringFromSelector(arg);
-            } break;
-            case '{': {
-                NSUInteger valueSize = 0;
-                NSGetSizeAndAlignment(argType, &valueSize, NULL);
-                unsigned char arg[valueSize];
-                [invocation getReturnValue:&arg];
-                argBox = [NSValue value:arg withObjCType:argType];
-            } break;
-            case 'v':
+        case '*': {
+            char *arg;
+            [invocation getReturnValue:&arg];
+            argBox = [[NSString alloc] initWithUTF8String:arg];
+        } break;
+        case '@': {
+            __weak id arg;
+            [invocation getReturnValue:&arg];
+            argBox = ^(){return arg;};
+        } break;
+        case '#': {
+            Class arg;
+            [invocation getReturnValue:&arg];
+            argBox = NSStringFromClass(arg);
+        } break;
+        case ':': {
+            SEL arg;
+            [invocation getReturnValue:&arg];
+            argBox = NSStringFromSelector(arg);
+        } break;
+        case '{': {
+            NSUInteger valueSize = 0;
+            NSGetSizeAndAlignment(argType, &valueSize, NULL);
+            unsigned char arg[valueSize];
+            [invocation getReturnValue:&arg];
+            argBox = [NSValue value:arg withObjCType:argType];
+        } break;
+        case 'v':
             break;
         default: {
             void *arg;
@@ -320,33 +321,33 @@ argBox = @(arg);\
                 IIFish_GetArgumentValueInBox('f', float)
                 IIFish_GetArgumentValueInBox('d', double)
                 IIFish_GetArgumentValueInBox('B', BOOL)
-                case '*': {
-                    char *arg;
-                    [invocation getArgument:&arg atIndex:i];
-                    argBox = [[NSString alloc] initWithUTF8String:arg];
-                } break;
-                case '@': {
-                    __weak id arg;
-                    [invocation getArgument:&arg atIndex:i];
-                    argBox = ^(){return arg;};
-                } break;
-                case '#': {
-                    Class arg;
-                    [invocation getArgument:&arg atIndex:i];
-                    argBox = NSStringFromClass(arg);
-                } break;
-                case ':': {
-                    SEL arg;
-                    [invocation getArgument:&arg atIndex:i];
-                    argBox = NSStringFromSelector(arg);
-                } break;
-                case '{': {
-                    NSUInteger valueSize = 0;
-                    NSGetSizeAndAlignment(argType, &valueSize, NULL);
-                    unsigned char arg[valueSize];
-                    [invocation getArgument:&arg atIndex:i];
-                    argBox = [NSValue value:arg withObjCType:argType];
-                } break;
+            case '*': {
+                char *arg;
+                [invocation getArgument:&arg atIndex:i];
+                argBox = [[NSString alloc] initWithUTF8String:arg];
+            } break;
+            case '@': {
+                __weak id arg;
+                [invocation getArgument:&arg atIndex:i];
+                argBox = ^(){return arg;};
+            } break;
+            case '#': {
+                Class arg;
+                [invocation getArgument:&arg atIndex:i];
+                argBox = NSStringFromClass(arg);
+            } break;
+            case ':': {
+                SEL arg;
+                [invocation getArgument:&arg atIndex:i];
+                argBox = NSStringFromSelector(arg);
+            } break;
+            case '{': {
+                NSUInteger valueSize = 0;
+                NSGetSizeAndAlignment(argType, &valueSize, NULL);
+                unsigned char arg[valueSize];
+                [invocation getArgument:&arg atIndex:i];
+                argBox = [NSValue value:arg withObjCType:argType];
+            } break;
             default: {
                 void *arg;
                 [invocation getArgument:&arg atIndex:i];
@@ -365,14 +366,14 @@ argBox = @(arg);\
 static IIFishCallBack* IIFish_Get_Callback(NSInvocation *invo) {
     IIFishCallBack *callBack = [[IIFishCallBack alloc] init];
     callBack.tager = invo.target;
-
+    
     if ([callBack.tager isKindOfClass:NSClassFromString(@"NSBlock")]) {
         callBack.args = IIFish_TypeEncoding_Get_MethodArgs(invo,1);
     } else {
         callBack.selector = NSStringFromSelector(invo.selector);
         callBack.args = IIFish_TypeEncoding_Get_MethodArgs(invo,2);
     }
-
+    
     callBack.resule = IIFish_TypeEncoding_Get_ReturnValueInBox(invo);
     return callBack;
 }
@@ -644,7 +645,7 @@ static void IIFish_Property_SetValueForKey(id obj, id value, NSString *propertyN
     SEL propertySel = IIFish_Property_AutoSETSelector(cls, propertyString);
     Method propertyMethod = class_getInstanceMethod(cls, propertySel);
     if (!propertyMethod || method_getImplementation(propertyMethod) != _objc_msgForward) {
-         return [obj setValue:value forKey:propertyName];
+        return [obj setValue:value forKey:propertyName];
     }
     
     size_t len = strlen(propertyString) + strlen(IIFish_Prefix) + 1;
@@ -695,7 +696,26 @@ static void IIFish_Class_AssetClear(id object) {
     objc_setAssociatedObject(object, "IIFish_Class_Get_Asset", nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-static void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
+
+static IIFishWatchCallBackBlock IIFish_object_getCallBack(id tager) {
+    IIFishWatchCallBackBlock callbackBlock = objc_getAssociatedObject(tager, IIFishWatch);
+    if (callbackBlock) return callbackBlock;
+    
+    Class cls = object_isClass(tager) ? tager : object_getClass(tager);
+    do {
+        callbackBlock = objc_getAssociatedObject(cls, IIFishWatch);
+        if (callbackBlock) return callbackBlock;
+    }while ((cls = class_getSuperclass(cls)));
+    
+    return nil;
+}
+
+static void IIFish_object_setCallBack(id tager, IIFishWatchCallBackBlock callbackBlock) {
+    objc_setAssociatedObject(tager, IIFishWatch, callbackBlock, OBJC_ASSOCIATION_COPY_NONATOMIC);
+}
+
+
+static void IIFishForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation) {
     SEL fakeSel = anInvocation.selector;
     const char *fakeSelString = sel_getName(fakeSel);
     char orgSelString[strlen(fakeSelString) + strlen(IIFish_Prefix) + 1];
@@ -704,7 +724,7 @@ static void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation)
     anInvocation.selector = sel_getUid(orgSelString);
     [anInvocation invoke];
     
-    IIFishWatchCallBackBlock callback = objc_getAssociatedObject([self class], IIFishWatch);
+    IIFishWatchCallBackBlock callback = IIFish_object_getCallBack(self);
     if (callback) {
         callback(IIFish_Get_Callback(anInvocation));
     }
@@ -734,7 +754,7 @@ static void fakeForwardInvocation(id self, SEL _cmd, NSInvocation *anInvocation)
         }
     }];
     //
-
+    
     id propertyValue = nil;
     if (info.length > 0) {
         propertyValue = IIFish_Property_GetValueForKey(self, info);
@@ -786,7 +806,7 @@ static Class IIFish_Class_CreateFakeSubClass(id object, const char *classPrefix)
     
     class_addMethod(fakeCls, @selector(class), imp_class, IIFish_Method_Type(@selector(class)));
     class_addMethod(fakeCls, @selector(superclass), imp_superClass, IIFish_Method_Type(@selector(superclass)));
-    class_addMethod(fakeCls, @selector(forwardInvocation:), (IMP)fakeForwardInvocation, IIFish_Method_Type(@selector(forwardInvocation:)));
+    class_addMethod(fakeCls, @selector(forwardInvocation:), (IMP)IIFishForwardInvocation, IIFish_Method_Type(@selector(forwardInvocation:)));
     
     objc_registerClassPair(fakeCls);
     
@@ -913,9 +933,9 @@ static pthread_mutex_t mutex;
     
     __block NSArray *a1,*a2;
     [asset asset:^(NSMutableDictionary<NSString *,NSString *> *methodAsset, NSMutableDictionary<NSString *,NSMutableSet<IIFish *> *> *observerAsset) {
-
+        
         if (SETSelector) {
-             a1 = [[observerAsset objectForKey:NSStringFromSelector(SETSelector)] allObjects];
+            a1 = [[observerAsset objectForKey:NSStringFromSelector(SETSelector)] allObjects];
         }
         if (autoSETSelector) {
             a2 = [[observerAsset objectForKey:NSStringFromSelector(autoSETSelector)] allObjects];
@@ -1080,16 +1100,16 @@ static void IIFish_HookAllMethods(Class targetClass, Method *methods, unsigned i
         snprintf(hookSelectorString, strlen(selectorSrting) + strlen(IIFish_Prefix) + 1, "%s%s",IIFish_Prefix, selectorSrting);
         SEL hookSelector = sel_getUid(hookSelectorString);
         if (class_getInstanceMethod(targetClass, hookSelector)) continue;
-
+        
         class_addMethod(targetClass, hookSelector, method_getImplementation(m), method_getTypeEncoding(m));
         method_setImplementation(m, IIFish_msgForward(method_getTypeEncoding(m)));
     }
     
     Method t = class_getInstanceMethod([NSObject class], @selector(forwardInvocation:));
     
-    BOOL success = class_addMethod(targetClass, @selector(forwardInvocation:), (IMP)fakeForwardInvocation, method_getTypeEncoding(t));
+    BOOL success = class_addMethod(targetClass, @selector(forwardInvocation:), (IMP)IIFishForwardInvocation, method_getTypeEncoding(t));
     if (!success) {
-        class_replaceMethod(targetClass, @selector(forwardInvocation:), (IMP)fakeForwardInvocation, method_getTypeEncoding(t));
+        class_replaceMethod(targetClass, @selector(forwardInvocation:), (IMP)IIFishForwardInvocation, method_getTypeEncoding(t));
     }
     
 }
@@ -1099,7 +1119,7 @@ static void IIFish_HookAllMethods(Class targetClass, Method *methods, unsigned i
     NSParameterAssert(callback);
     
     if (strncmp(class_getName(self), IIFish_Prefix, strlen(IIFish_Prefix)) == 0) return;
-    objc_setAssociatedObject(self, IIFishWatch, callback, OBJC_ASSOCIATION_COPY_NONATOMIC);
+    IIFish_object_setCallBack(self, callback);
     
     BOOL withoutNSObject = options & IIFishWatchOptionsWithoutNSObject;
     
@@ -1123,7 +1143,7 @@ static void IIFish_HookAllMethods(Class targetClass, Method *methods, unsigned i
     NSParameterAssert(callback);
     
     IIFish_Hook_Class(self);
-    objc_setAssociatedObject(self, IIFishWatch, callback, OBJC_ASSOCIATION_COPY_NONATOMIC);
+    IIFish_object_setCallBack(self, callback);
     
     unsigned int count;
     Method *methods = class_copyMethodList([self class], &count);
@@ -1132,3 +1152,4 @@ static void IIFish_HookAllMethods(Class targetClass, Method *methods, unsigned i
 }
 
 @end
+
