@@ -209,22 +209,22 @@ typedef NS_OPTIONS(NSUInteger, IIFishFlage) {
 }
 @end
 
-#pragma mark- runtime add
-
-static Method IIFish_Class_getInstanceMethodWithoutSuper(Class cls, SEL sel) {
-    unsigned int count;
-    Method *methods = class_copyMethodList(cls, &count);
-    Method m = NULL;
-    for (unsigned int i = 0; i < count; i ++) {
-        if (method_getName(methods[i]) == sel) {
-            m = methods[i];
-            break;
-        }
-    }
-    
-    free(methods);
-    return m;
-}
+//#pragma mark- runtime add
+//
+//static Method IIFish_Class_getInstanceMethodWithoutSuper(Class cls, SEL sel) {
+//    unsigned int count;
+//    Method *methods = class_copyMethodList(cls, &count);
+//    Method m = NULL;
+//    for (unsigned int i = 0; i < count; i ++) {
+//        if (method_getName(methods[i]) == sel) {
+//            m = methods[i];
+//            break;
+//        }
+//    }
+//    
+//    free(methods);
+//    return m;
+//}
 
 #pragma mark- Type Encodings
 // https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtTypeEncodings.html
