@@ -221,7 +221,7 @@ typedef NS_OPTIONS(NSUInteger, IIFishFlage) {
 //            break;
 //        }
 //    }
-//    
+//
 //    free(methods);
 //    return m;
 //}
@@ -398,6 +398,13 @@ static IMP IIFish_msgForward(const char *methodTypes) {
     return msgForwardIMP;
 }
 
+static BOOL IIFish_isMsgForward(IMP imp) {
+    return  (imp == _objc_msgForward
+#if !defined(__arm64__)
+             || imp == _objc_msgForward_stret
+#endif
+             );
+}
 
 #pragma mark-
 #pragma mark- Block Hook
@@ -815,7 +822,7 @@ static Class IIFish_Class_CreateFakeSubClass(id object, const char *classPrefix)
 
 static void IIFish_Hook_Class(id object) {
     if (!IIFish_Class_IsSafeObject(object)) {
-        //error kvo  fix
+        //maybe KVO object
         return;
     }
     
@@ -826,6 +833,11 @@ static void IIFish_Hook_Class(id object) {
 static void IIFish_Hook_Method(id object, SEL cmd) {
     
     Class cls = object_getClass(object);
+    
+    Method m = class_getInstanceMethod(cls, cmd);
+    if (IIFish_isMsgForward(method_getImplementation(m))) {
+        return;
+    }
     
     Method orgMethod = class_getInstanceMethod(cls, cmd);
     NSString *fakeSelStr = [NSString stringWithFormat:@"%s%s", IIFish_Prefix, sel_getName(cmd)];

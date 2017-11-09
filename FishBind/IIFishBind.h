@@ -71,9 +71,12 @@ typedef NS_OPTIONS(NSUInteger, IIFishWatchOptions) {
     IIFishWatchOptionsWithoutNSObject = (1 << 2)
 };
 
+
+
 typedef void(^IIFishWatchCallBackBlock) (IIFishCallBack *callBack);
 
 @interface NSObject (IIFishWatch)
 + (void)iifish_watchMethodsOptions:(IIFishWatchOptions)options callback:(IIFishWatchCallBackBlock)callback;
 - (void)iifish_watchMethodsOptions:(IIFishWatchOptions)options callback:(IIFishWatchCallBackBlock)callback;
 @end
+
