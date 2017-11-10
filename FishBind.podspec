@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = "FishBind"
-  s.version      = "0.2.2"
+  s.version      = "0.2.4"
   s.summary      = "FishBind supports a simple way to bind messages between objects."
   s.description =  "Support binding properties, methods, block. Supports one-way binding & bidirectional binding."
   s.homepage     = "https://github.com/welcommand/FishBind"

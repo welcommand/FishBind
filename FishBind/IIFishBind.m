@@ -260,9 +260,10 @@ argBox = @(arg);\
             argBox = [[NSString alloc] initWithUTF8String:arg];
         } break;
         case '@': {
-            __weak id arg;
+            __autoreleasing id arg;
             [invocation getReturnValue:&arg];
-            argBox = ^(){return arg;};
+            __weak id weakArg = arg;
+            argBox = ^(){return weakArg;};
         } break;
         case '#': {
             Class arg;
@@ -327,9 +328,10 @@ argBox = @(arg);\
                 argBox = [[NSString alloc] initWithUTF8String:arg];
             } break;
             case '@': {
-                __weak id arg;
+                __autoreleasing id arg;
                 [invocation getArgument:&arg atIndex:i];
-                argBox = ^(){return arg;};
+                __weak id weakArg = arg;
+                argBox = ^(){return weakArg;};
             } break;
             case '#': {
                 Class arg;
